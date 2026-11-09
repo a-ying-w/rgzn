@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -178,6 +179,10 @@ def write_splits(df: pd.DataFrame, out_dir: str | Path, meta: dict | None = None
     }
     if meta:
         info.update(meta)
+    info["sha256"] = {
+        s: hashlib.sha256((out / f"{s}.csv").read_bytes()).hexdigest()
+        for s in ("train", "val", "test")
+    }
     (out / "meta.json").write_text(
         json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8"
     )

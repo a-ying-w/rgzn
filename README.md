@@ -47,11 +47,11 @@ python scripts/check_pipeline.py --splits data/splits_dummy --root data/raw/dumm
 ```bash
 git clone --depth 1 --filter=blob:none --sparse https://github.com/spMohanty/PlantVillage-Dataset.git data/raw/plantvillage
 cd data/raw/plantvillage
-git sparse-checkout set raw/color/Tomato___Bacterial_spot raw/color/Tomato___Early_blight raw/color/Tomato___Late_blight raw/color/Tomato___Leaf_Mold raw/color/Tomato___Septoria_leaf_spot raw/color/Tomato___healthy
+git sparse-checkout set raw/color/Tomato___Bacterial_spot raw/color/Tomato___Early_blight raw/color/Tomato___Late_blight raw/color/Tomato___Leaf_Mold raw/color/Tomato___Septoria_leaf_spot raw/color/Tomato___healthy raw/segmented/Tomato___Bacterial_spot raw/segmented/Tomato___Early_blight raw/segmented/Tomato___Late_blight raw/segmented/Tomato___Leaf_Mold raw/segmented/Tomato___Septoria_leaf_spot raw/segmented/Tomato___healthy
 cd ../../..
 ```
 
-PowerShell 不支持 `\` 续行，所以上面写成一整行。若想全库，把 `git sparse-checkout set` 后面换成 `raw/color`。
+PowerShell 不支持 `\` 续行，所以上面写成一整行。`segmented` 是 E4 跨域实验用的，必须一起拉。若想全库，把 `git sparse-checkout set` 后面换成 `raw/color`。
 
 最终路径形如 `data/raw/plantvillage/raw/color/Tomato___Early_blight/*.JPG`。
 `configs/base.yaml` 的 `data.root` 保持 `data/raw/plantvillage` 即可 —— 脚本会自动下探到 `raw/color`。
@@ -143,7 +143,7 @@ python -m src.train --config configs/base.yaml --set train.epochs=5 model.name=m
 
 | | 负责 | 已交付 / 待交付 |
 |---|---|---|
-| **A** | 数据与基建 | ✅ `splits`、`dedupe`、`corruptions`、`dataset`、`transforms`、`metrics`、`table`、仓库骨架 |
+| **A** | 数据与基建 | ✅ `splits`、`dedupe`、`corruptions`、`dataset`、`transforms`、`metrics`、`table`、仓库骨架、`configs/e0_resnet18_ft.yaml` |
 | **B** | 模型与训练 | ⬜ `src/models/cnn.py`、`build.py`、`src/train.py`、`src/eval.py` |
 | **C** | MobileNet + 可解释 + Demo | ⬜ `mobilenet_v3_small`、Grad-CAM、`app.py` |
 | **D** | 实验编排与分析 | ⬜ E2/E3/E4、图表、报告 |
@@ -154,6 +154,8 @@ python -m src.train --config configs/base.yaml --set train.epochs=5 model.name=m
 python -m src.train --config configs/xxx.yaml --seed 42
 # 产物: runs/<run_name>/best.pth, metrics.json, 并自动 append 一行到 results.csv
 ```
+
+- `train.freeze_backbone: true` 时冻结主干、只训练分类 head（E0 用，见 `configs/e0_resnet18_ft.yaml`）；`false` 时整体微调。`model.pretrained=false` 时该字段忽略。
 
 **C 的 `build.py` 约定**：
 
@@ -189,5 +191,5 @@ loaders = build_loaders(cfg, corruption="blur", severity=3, splits=("test",))
 python scripts/check_pipeline.py
 ```
 
-7 项检查：划分文件 / 字段 / 无泄漏 / 图片可读 / 扰动生效 / 指标正确 / Dataset 可用。
+8 项检查：划分文件 / 字段 / 无泄漏 / 图片可读 / 抽样可解码 / 扰动生效 / 指标正确 / Dataset 可用（本地无 torch 时最后一项 SKIP，须在 Kaggle 补验）。
 全绿才算 A 岗完成，其他人才能开工。

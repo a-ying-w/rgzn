@@ -23,8 +23,14 @@
     "Tomato___Septoria_leaf_spot": 1771,
     "Tomato___healthy": 1591
   },
-  "root": "C:\\Users\\王迎\\Downloads\\dream1\\rgzn\\data\\raw\\plantvillage\\raw\\color",
+  "root": "data/raw/plantvillage/raw/color",
   "seed": 42,
+  "frozen": true,
+  "sha256": {
+    "train": "80d3b917c6d66fb3bd1557d9aa1deb5575b445bddfa2e46e5c753bcf432f68ce",
+    "val": "72b4ffa43499cadf6c805dadede3d4c473a09643e68d2e30730cdfd61bfc8a3c",
+    "test": "40987abfd5218493af594e935015003a37fddd1568db072ff578b0e3ee277609"
+  },
   "dedupe": {
     "dedupe": true,
     "max_dist": 8,

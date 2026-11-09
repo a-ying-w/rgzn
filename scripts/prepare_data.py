@@ -66,11 +66,16 @@ def main() -> None:
         raise SystemExit(f"划分校验失败: 泄漏组 {report['leaked_groups']}，空集合 {report['empty_splits']}")
 
     print(f"[4/4] 写出到 {out}")
+    resolved = Path(color_root).resolve()
+    try:
+        root_str = resolved.relative_to(ROOT).as_posix()
+    except ValueError:
+        root_str = str(resolved)  # 数据集在仓库外时只能记绝对路径
     write_splits(
         df,
         out,
         meta={
-            "root": str(Path(color_root).resolve()),
+            "root": root_str,
             "seed": seed,
             "dedupe": dedupe_stats,
             "val_ratio": args.val_ratio,

@@ -1,0 +1,37 @@
+# E0 基线跑通：ResNet18 冻结主干、只微调分类 head，1 seed。
+# 目的：验证全链路（数据 → 训练 → 评测 → results.csv）能跑通，并给全组一个基准数。
+# 用法: python -m src.train --config configs/e0_resnet18_ft.yaml --seed 42
+seed: 42
+
+data:
+  root: data/raw/plantvillage
+  split_dir: data/splits
+  classes:
+    - Tomato___Bacterial_spot
+    - Tomato___Early_blight
+    - Tomato___Late_blight
+    - Tomato___Leaf_Mold
+    - Tomato___Septoria_leaf_spot
+    - Tomato___healthy
+  image_size: 224
+  resize_size: 256
+  num_workers: 4
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+model:
+  name: resnet18
+  pretrained: true        # ImageNet 预训练权重
+
+train:
+  epochs: 10              # 只训 head，收敛快，10 轮足够
+  batch_size: 64
+  lr: 0.001               # 只更新 head，用比微调整体更大的 lr
+  freeze_backbone: true   # E0 的关键开关
+  weight_decay: 0.0001
+  label_smoothing: 0.1
+  amp: true
+  subset_ratio: 1.0
+  aug: basic
+
+output_dir: runs
