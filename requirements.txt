@@ -1,0 +1,10 @@
+numpy
+pandas
+pillow
+pyyaml
+matplotlib
+
+# 训练用（Kaggle / Colab 已预装，无需本地安装）
+torch>=2.2
+torchvision>=0.17
+tqdm

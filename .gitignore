@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+
+# 数据集与训练产物不入库（splits 的 csv 必须入库）
+data/raw/
+data/splits_dummy/
+data/splits_leaky/
+data/splits/*.png
+runs/
+outputs/
+*.pth
+*.pt
+*.ckpt
