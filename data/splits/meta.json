@@ -1,0 +1,37 @@
+{
+  "created_at": "2026-11-09T19:49:28+08:00",
+  "classes": [
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___healthy"
+  ],
+  "n_images": 9350,
+  "n_groups": 8847,
+  "split_sizes": {
+    "train": 6544,
+    "val": 1403,
+    "test": 1403
+  },
+  "per_class": {
+    "Tomato___Bacterial_spot": 2127,
+    "Tomato___Early_blight": 1000,
+    "Tomato___Late_blight": 1909,
+    "Tomato___Leaf_Mold": 952,
+    "Tomato___Septoria_leaf_spot": 1771,
+    "Tomato___healthy": 1591
+  },
+  "root": "C:\\Users\\王迎\\Downloads\\dream1\\rgzn\\data\\raw\\plantvillage\\raw\\color",
+  "seed": 42,
+  "dedupe": {
+    "dedupe": true,
+    "max_dist": 8,
+    "n_images": 9350,
+    "n_groups": 8847,
+    "n_merged": 503
+  },
+  "val_ratio": 0.15,
+  "test_ratio": 0.15
+}
