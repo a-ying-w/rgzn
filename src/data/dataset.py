@@ -10,8 +10,20 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
-from .splits import resolve_color_root
+from .splits import resolve_data_root
 from .transforms import build_corrupted_eval_transform, build_eval_transform, build_train_transform
+
+# segmented 版本命名规则：<原文件名去后缀>_final_masked.jpg（E4 跨域实验用）
+SEGMENTED_SUFFIX = "_final_masked.jpg"
+
+
+def resolve_image_path(root: Path, rel_path: str, variant: str = "color") -> Path:
+    p = Path(rel_path)
+    if variant == "segmented":
+        p = p.with_name(p.stem + SEGMENTED_SUFFIX)
+    elif variant != "color":
+        raise ValueError(f"未知的 data.variant: {variant}（只支持 color / segmented）")
+    return root / p
 
 
 class LeafDataset(Dataset):
@@ -23,12 +35,14 @@ class LeafDataset(Dataset):
         transform=None,
         subset_ratio: float = 1.0,
         seed: int = 42,
+        variant: str = "color",
     ):
         df = pd.read_csv(split_csv)
         if subset_ratio < 1.0:
             df = stratified_subsample(df, subset_ratio, seed)
         self.df = df.reset_index(drop=True)
-        self.root = resolve_color_root(root)
+        self.variant = variant
+        self.root = resolve_data_root(root, variant)
         self.classes = list(classes)
         self.class_to_idx = {c: i for i, c in enumerate(classes)}
         self.transform = transform
@@ -37,12 +51,21 @@ class LeafDataset(Dataset):
         if unknown:
             raise ValueError(f"splits 中出现未在 classes 里声明的类别: {sorted(unknown)}")
 
+        # 启动时校验第一张图，避免跑到一半才发现 variant / 路径不对
+        if len(self.df):
+            first = resolve_image_path(self.root, self.df.iloc[0]["path"], variant)
+            if not first.exists():
+                raise FileNotFoundError(
+                    f"variant={variant} 找不到图片: {first}\n"
+                    f"请确认 data.root 指向含 color/ segmented/ 的目录"
+                )
+
     def __len__(self) -> int:
         return len(self.df)
 
     def __getitem__(self, index: int):
         row = self.df.iloc[index]
-        img = Image.open(self.root / row["path"]).convert("RGB")
+        img = Image.open(resolve_image_path(self.root, row["path"], self.variant)).convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
         return img, self.class_to_idx[row["class_name"]]
@@ -85,6 +108,7 @@ def build_datasets(cfg: dict, corruption: str | None = None, severity: int = 0) 
     split_dir = Path(dcfg["split_dir"])
     root = dcfg["root"]
     classes = dcfg["classes"]
+    variant = dcfg.get("variant", "color")
     return {
         "train": LeafDataset(
             split_dir / "train.csv",
@@ -93,9 +117,10 @@ def build_datasets(cfg: dict, corruption: str | None = None, severity: int = 0) 
             transform=train_tf,
             subset_ratio=cfg["train"].get("subset_ratio", 1.0),
             seed=cfg.get("seed", 42),
+            variant=variant,
         ),
-        "val": LeafDataset(split_dir / "val.csv", root, classes, transform=eval_tf),
-        "test": LeafDataset(split_dir / "test.csv", root, classes, transform=eval_tf),
+        "val": LeafDataset(split_dir / "val.csv", root, classes, transform=eval_tf, variant=variant),
+        "test": LeafDataset(split_dir / "test.csv", root, classes, transform=eval_tf, variant=variant),
     }
 
 

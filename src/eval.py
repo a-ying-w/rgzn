@@ -100,7 +100,7 @@ def main() -> None:
                 "acc": round(metrics["acc"], 4),
                 "macro_f1": round(metrics["macro_f1"], 4),
                 "params_m": "",
-                "notes": f"eval from {ckpt_path.parent.name}",
+                "notes": f"eval from {ckpt_path.parent.name} variant={cfg['data'].get('variant', 'color')}",
             },
         )
 

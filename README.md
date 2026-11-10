@@ -167,7 +167,7 @@ python -m src.train --config configs/base.yaml --set train.epochs=5 model.name=m
 | | 负责 | 已交付 / 待交付 |
 |---|---|---|
 | **A** | 数据与基建 | ✅ `splits`、`dedupe`、`corruptions`、`dataset`、`transforms`、`metrics`、`table`、仓库骨架、`configs/e0_resnet18_ft.yaml` |
-| **B** | 模型与训练 | ⬜ `src/models/cnn.py`、`build.py`、`src/train.py`、`src/eval.py` |
+| **B** | 模型与训练 | ✅ `src/models/cnn.py`、`build.py`、`src/train.py`、`src/eval.py` |
 | **C** | MobileNet + 可解释 + Demo | ⬜ `mobilenet_v3_small`、Grad-CAM、`app.py` |
 | **D** | 实验编排与分析 | ⬜ E2/E3/E4、图表、报告 |
 
@@ -205,6 +205,28 @@ loaders = build_loaders(cfg, corruption="blur", severity=3, splits=("test",))
 
 `brightness` / `rotation` / `blur` 各 5 级，参数见 `src/data/corruptions.py` 的 `SEVERITY_MAP`。
 **测试时扰动只在 eval 用，训练时不要动。**
+
+---
+
+## 6.1 跨域实验（E4：color → segmented）
+
+`data.variant` 决定读哪一套图，默认 `color`，可填 `segmented`（去背景）。划分文件两套共用，保证同组图片不跨 split。
+
+| 配置 | 用途 |
+|---|---|
+| `configs/e4a_color2seg.yaml` | color 训练的权重直接在 segmented 上评测（**不训练**，D 做） |
+| `configs/e4b_seg2seg.yaml` | 训练与测试都在 segmented，作为上界对照（B 做） |
+
+```bash
+# E4a 零样本跨域：拿 E1b 的权重直接测
+python -m src.eval --config configs/e4a_color2seg.yaml \
+    --ckpt runs/e1b_resnet18_ft_r100_s42/best.pth --exp-id e4a
+
+# E4b 域内上界：在 segmented 上重训一次
+python -m src.train --config configs/e4b_seg2seg.yaml --seed 42
+```
+
+segmented 的文件名规则是 `<原文件名>_final_masked.jpg`，映射写在 `src/data/dataset.py` 的 `resolve_image_path` 里，9350 张已全部对齐。
 
 ---
 

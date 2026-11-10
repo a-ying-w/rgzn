@@ -4,6 +4,7 @@ seed: 42
 data:
   # 指向 PlantVillage 根目录（含 color/ 的那一层）
   root: data/raw/plantvillage
+  variant: color           # color | segmented（E4 跨域：训练用 color、测试换 segmented）
   split_dir: data/splits
   classes:
     - Tomato___Bacterial_spot
