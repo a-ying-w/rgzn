@@ -1,0 +1,44 @@
+# E2 增强消融 · A0 无增强 · scratch 列：resnet18 从零训练
+# 与 A 的 e2a_aug_none.yaml 同一臂（exp_id=e2a），本配置补第二个模型列（scratch）
+# 本列 basic 臂 = e1a；strong 臂见 e2c_aug_strong_scratch.yaml
+# 除 train.aug 外与 e1a 完全一致，保证唯一变量是增强策略
+exp_id: e2a
+seed: 42
+
+data:
+  root: data/raw/plantvillage
+  split_dir: data/splits
+  classes:
+    - Tomato___Bacterial_spot
+    - Tomato___Early_blight
+    - Tomato___Late_blight
+    - Tomato___Leaf_Mold
+    - Tomato___Septoria_leaf_spot
+    - Tomato___healthy
+  image_size: 224
+  resize_size: 256
+  num_workers: 4
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+model:
+  name: resnet18
+  pretrained: false
+
+train:
+  epochs: 15
+  batch_size: 64
+  lr_backbone: 0.001      # 从零训练：backbone 与 head 同 lr
+  lr_head: 0.001
+  freeze_backbone: false
+  weight_decay: 0.0001
+  label_smoothing: 0.1
+  amp: true
+  subset_ratio: 1.0
+  aug: none               # A0：仅 Resize+CenterCrop，无任何随机增强
+  class_weight: none
+  scheduler: cosine
+  patience: 0
+  monitor: macro_f1
+
+output_dir: runs
