@@ -1,5 +1,5 @@
 # E1b：resnet18 预训练权重全量微调（与 E1a 从零训练、E0 冻结基线对比）
-exp_id: e1
+exp_id: e1b
 seed: 42
 
 data:

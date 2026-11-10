@@ -1,5 +1,5 @@
 # E1c：自建 4-block CNN 从零训练（模型架构对照，衡量预训练权重之外的结构收益）
-exp_id: e1
+exp_id: e1c
 seed: 42
 
 data:

@@ -1,6 +1,7 @@
 # E0 基线跑通：ResNet18 冻结主干、只微调分类 head，1 seed。
 # 目的：验证全链路（数据 → 训练 → 评测 → results.csv）能跑通，并给全组一个基准数。
 # 用法: python -m src.train --config configs/e0_resnet18_ft.yaml --seed 42
+exp_id: e0                  # 与 run 目录前缀、results.csv 的 exp_id 列保持一致
 seed: 42
 
 data:

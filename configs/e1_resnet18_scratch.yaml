@@ -1,5 +1,5 @@
 # E1a：resnet18 从零训练（无预训练权重），与 E0 冻结基线和 E1 微调对比
-exp_id: e1
+exp_id: e1a
 seed: 42
 
 data:
