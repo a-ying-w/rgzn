@@ -26,12 +26,17 @@ model:
 train:
   epochs: 10              # 只训 head，收敛快，10 轮足够
   batch_size: 64
-  lr: 0.001               # 只更新 head，用比微调整体更大的 lr
+  lr_backbone: 0.0001     # 冻结时 backbone 不训练，此值不生效
+  lr_head: 0.001          # 只更新 head，用比微调整体更大的 lr
   freeze_backbone: true   # E0 的关键开关
   weight_decay: 0.0001
   label_smoothing: 0.1
   amp: true
   subset_ratio: 1.0
   aug: basic
+  class_weight: none
+  scheduler: cosine
+  patience: 0
+  monitor: macro_f1
 
 output_dir: runs
