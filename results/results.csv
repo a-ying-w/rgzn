@@ -1,1 +1,11 @@
-exp_id,model,pretrained,aug,seed,data_ratio,split,corruption,severity,acc,macro_f1,params_m,notes
+﻿exp_id,model,pretrained,aug,seed,data_ratio,split,corruption,severity,acc,macro_f1,params_m,notes
+e0,resnet18,True,basic,42,1.0,val,clean,0,0.8931,0.8768,11.18,freeze=True cw=none
+e0,resnet18,True,basic,42,1.0,test,clean,0,0.9009,0.8907,11.18,freeze=True cw=none
+e1a,resnet18,False,basic,42,1.0,val,clean,0,0.9857,0.9843,11.18,freeze=False cw=none
+e1a,resnet18,False,basic,42,1.0,test,clean,0,0.9815,0.9807,11.18,freeze=False cw=none
+e1b,resnet18,True,basic,42,1.0,val,clean,0,0.9971,0.9971,11.18,freeze=False cw=none
+e1b,resnet18,True,basic,42,1.0,test,clean,0,0.9957,0.9953,11.18,freeze=False cw=none
+e1c,cnn,False,basic,42,1.0,val,clean,0,0.9786,0.9779,1.17,freeze=False cw=none
+e1c,cnn,False,basic,42,1.0,test,clean,0,0.9758,0.9745,1.17,freeze=False cw=none
+e1d,resnet18,True,basic,42,1.0,val,clean,0,0.9979,0.998,11.18,freeze=False cw=balanced
+e1d,resnet18,True,basic,42,1.0,test,clean,0,0.995,0.995,11.18,freeze=False cw=balanced
