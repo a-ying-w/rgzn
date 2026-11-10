@@ -1,1 +1,9 @@
 exp_id,model,pretrained,aug,seed,data_ratio,split,corruption,severity,acc,macro_f1,params_m,notes
+e1,resnet18,False,basic,42,1.0,val,clean,0,0.9857,0.9847,11.18,freeze=False cw=none
+e1,resnet18,False,basic,42,1.0,test,clean,0,0.9808,0.9805,11.18,freeze=False cw=none
+e0_resnet18_ft,resnet18,True,basic,42,1.0,val,clean,0,0.8931,0.8768,11.18,freeze=True cw=none
+e0_resnet18_ft,resnet18,True,basic,42,1.0,test,clean,0,0.9009,0.8907,11.18,freeze=True cw=none
+e1,resnet18,True,basic,42,1.0,val,clean,0,0.9979,0.998,11.18,freeze=False cw=none
+e1,resnet18,True,basic,42,1.0,test,clean,0,0.9957,0.9951,11.18,freeze=False cw=none
+e1,cnn,False,basic,42,1.0,val,clean,0,0.9793,0.9788,1.17,freeze=False cw=none
+e1,cnn,False,basic,42,1.0,test,clean,0,0.9772,0.9765,1.17,freeze=False cw=none
