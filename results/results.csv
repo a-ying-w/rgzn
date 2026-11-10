@@ -9,3 +9,4 @@ e1c,cnn,False,basic,42,1.0,val,clean,0,0.9786,0.9779,1.17,freeze=False cw=none
 e1c,cnn,False,basic,42,1.0,test,clean,0,0.9758,0.9745,1.17,freeze=False cw=none
 e1d,resnet18,True,basic,42,1.0,val,clean,0,0.9979,0.998,11.18,freeze=False cw=balanced
 e1d,resnet18,True,basic,42,1.0,test,clean,0,0.995,0.995,11.18,freeze=False cw=balanced
+e4a,resnet18,True,basic,42,1.0,test,clean,0,0.6835,0.6571,,eval from e1b_resnet18_ft_r100_s42 variant=segmented
