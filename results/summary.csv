@@ -1,0 +1,11 @@
+exp_id,model,pretrained,aug,data_ratio,split,corruption,severity,n_seeds,acc_mean,acc_std,f1_mean,f1_std
+e0,resnet18,True,basic,1.0,test,clean,0,1,0.9009,,0.8907,
+e0,resnet18,True,basic,1.0,val,clean,0,1,0.8931,,0.8768,
+e1a,resnet18,False,basic,1.0,test,clean,0,1,0.9815,,0.9807,
+e1a,resnet18,False,basic,1.0,val,clean,0,1,0.9857,,0.9843,
+e1b,resnet18,True,basic,1.0,test,clean,0,1,0.9957,,0.9953,
+e1b,resnet18,True,basic,1.0,val,clean,0,1,0.9971,,0.9971,
+e1c,cnn,False,basic,1.0,test,clean,0,1,0.9758,,0.9745,
+e1c,cnn,False,basic,1.0,val,clean,0,1,0.9786,,0.9779,
+e1d,resnet18,True,basic,1.0,test,clean,0,1,0.995,,0.995,
+e1d,resnet18,True,basic,1.0,val,clean,0,1,0.9979,,0.998,

@@ -26,7 +26,7 @@ COLUMNS = [
     "notes",
 ]
 
-GROUP_KEYS = ["model", "pretrained", "aug", "data_ratio", "split", "corruption", "severity"]
+GROUP_KEYS = ["exp_id", "model", "pretrained", "aug", "data_ratio", "split", "corruption", "severity"]
 
 
 def append_row(path: str | Path, row: dict) -> None:
