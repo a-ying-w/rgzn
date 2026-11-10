@@ -15,13 +15,25 @@ PlantVillage 番茄 6 类叶片病害分类，三组核心实验：**从零 vs �
 
 > 本地 Python 3.14 目前装不了 torch，这是正常的，不要试图在本地训练。本地只做数据准备，训练一律在 Kaggle（每账号每周 30 小时免费 GPU）。
 
+### 0.1 仓库里没有图片
+
+Clone 下来只有代码和 `data/splits/*.csv`，csv 里存的是**相对路径字符串**（如 `Tomato___Early_blight/xxx.JPG`），不是图片本身。所以：
+
+| 你要做的事 | 需要真实数据集？ | 怎么做 |
+|---|---|---|
+| 写模型 / 调通链路 | 不需要 | 用 §1 的假数据，`make_dummy_data.py` 生成，本地 CPU 可跑 |
+| 本地跑真实数据 | 需要 | 用 §2 的 `sparse-checkout`，约 224MB |
+| Kaggle 出实验结果 | 需要 | Add Data 挂 `abdallahalidev/plantvillage-dataset`，见 §2.1 |
+
+⚠️ 划分里的路径是**具体文件名**，数据必须与 spMohanty 那份同源（Kaggle mirror 是它的衍生版，文件名一致）。用了裁剪过或改名过的版本，`check_pipeline.py` 会直接报"图片文件存在 — 缺失 N 张"。
+
 ```bash
 pip install numpy pandas pillow pyyaml matplotlib
 ```
 
 ---
 
-## 1. 快速开始（不需要真实数据集）
+## 1. 快速开始（写代码阶段，用假数据）
 
 ```bash
 # 1) 生成假数据，让训练脚本当天就能跑通
@@ -56,8 +68,6 @@ PowerShell 不支持 `\` 续行，所以上面写成一整行。`segmented` 是 
 最终路径形如 `data/raw/plantvillage/raw/color/Tomato___Early_blight/*.JPG`。
 `configs/base.yaml` 的 `data.root` 保持 `data/raw/plantvillage` 即可 —— 脚本会自动下探到 `raw/color`。
 
-> 镜像备选：Kaggle 的 `abdallahalidev/plantvillage-dataset`，国内下载更快，解压后直接是 `color/` 那一层，同样能识别。
-
 然后生成正式划分（约 1 万张，几分钟）：
 
 ```bash
@@ -66,6 +76,19 @@ python scripts/prepare_data.py
 
 产出 `data/splits/{train,val,test}.csv` + `meta.json` + `class_distribution.png`。
 **这三个 csv 提交到仓库后即冻结，此后任何人不得重新生成。**
+
+### 2.1 Kaggle 上怎么用
+
+`abdallahalidev/plantvillage-dataset` 是同一份数据的 Kaggle 镜像，目录直接是 `color/ segmented/`，不用自己上传。Notebook 右侧 Add Data 挂载后：
+
+```python
+from src.config import load_config
+
+cfg = load_config("configs/base.yaml")
+cfg["data"]["root"] = "/kaggle/input/plantvillage-dataset"   # 含 color/ 的那一层
+```
+
+脚本会自动识别 `color/` 与 `segmented/`，其余配置不用改。
 
 ---
 
