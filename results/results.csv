@@ -13,3 +13,4 @@ e4b,resnet18,True,basic,42,1.0,val,clean,0,0.9957,0.9957,11.18,freeze=False cw=n
 e4b,resnet18,True,basic,42,1.0,test,clean,0,0.9957,0.9954,11.18,freeze=False cw=none
 e1e,mobilenet_v3_small,True,basic,42,1.0,val,clean,0,0.9929,0.9926,1.52,freeze=False cw=none
 e1e,mobilenet_v3_small,True,basic,42,1.0,test,clean,0,0.9957,0.9958,1.52,freeze=False cw=none
+e4a,resnet18,True,basic,42,1.0,test,clean,0,0.6835,0.6571,,eval from e1b_resnet18_ft_r100_s42 variant=segmented
