@@ -1,7 +1,8 @@
-# E2 增强消融 · A0 无增强：resnet18 预训练微调
-# 对照臂 A1(basic) 已由 e1b 跑出，A2 见 e2_resnet18_ft_aug_strong.yaml
-# 除 train.aug 外与 e1b 完全一致，保证唯一变量是增强策略
-exp_id: e2
+# E2 增强消融 · A0 无增强 · scratch 列：resnet18 从零训练
+# 与 A 的 e2a_aug_none.yaml 同一臂（exp_id=e2a），本配置补第二个模型列（scratch）
+# 本列 basic 臂 = e1a；strong 臂见 e2c_aug_strong_scratch.yaml
+# 除 train.aug 外与 e1a 完全一致，保证唯一变量是增强策略
+exp_id: e2a
 seed: 42
 
 data:
@@ -22,12 +23,12 @@ data:
 
 model:
   name: resnet18
-  pretrained: true
+  pretrained: false
 
 train:
   epochs: 15
   batch_size: 64
-  lr_backbone: 0.0001     # 预训练主干小 lr 微调
+  lr_backbone: 0.001      # 从零训练：backbone 与 head 同 lr
   lr_head: 0.001
   freeze_backbone: false
   weight_decay: 0.0001
