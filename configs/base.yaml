@@ -25,12 +25,18 @@ model:
 train:
   epochs: 15
   batch_size: 64
-  lr: 0.0001
+  # 分组学习率：backbone / head 各一份。从零训练时把两者设成同值即可
+  lr_backbone: 0.0001
+  lr_head: 0.001
   freeze_backbone: false  # true=冻结主干只训 head（E0 用）；pretrained=false 时忽略
-  weight_decay: 0.0001
+  weight_decay: 0.0001    # BN 与 bias 不参与衰减
   label_smoothing: 0.1
   amp: true
   subset_ratio: 1.0       # E1b：训练集只用 0.1 / 0.25 / 0.5 / 1.0
   aug: basic              # none | basic | strong
+  class_weight: none      # none | balanced（只用 train split 计数，禁止用 val/test）
+  scheduler: cosine
+  patience: 0             # <=0 关闭早停
+  monitor: macro_f1       # best.pth 的挑选准则，不按 acc
 
 output_dir: runs
