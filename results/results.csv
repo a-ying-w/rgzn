@@ -11,3 +11,5 @@ e1d,resnet18,True,basic,42,1.0,val,clean,0,0.9979,0.998,11.18,freeze=False cw=ba
 e1d,resnet18,True,basic,42,1.0,test,clean,0,0.995,0.995,11.18,freeze=False cw=balanced
 e4b,resnet18,True,basic,42,1.0,val,clean,0,0.9957,0.9957,11.18,freeze=False cw=none
 e4b,resnet18,True,basic,42,1.0,test,clean,0,0.9957,0.9954,11.18,freeze=False cw=none
+e1e,mobilenet_v3_small,True,basic,42,1.0,val,clean,0,0.9929,0.9926,1.52,freeze=False cw=none
+e1e,mobilenet_v3_small,True,basic,42,1.0,test,clean,0,0.9957,0.9958,1.52,freeze=False cw=none

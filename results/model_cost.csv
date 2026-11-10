@@ -1,0 +1,4 @@
+model,params_m,flops_g,latency_ms_mean,latency_ms_std,latency_ms_p50,fps,device,batch_size,notes
+cnn,1.175,5.173,1.183,0.236,1.041,845.3,cuda / NVIDIA GeForce RTX 4060 Laptop GPU,1,"torch 2.8.0+cu126, threads=20"
+mobilenet_v3_small,1.524,0.111,3.984,0.378,3.959,251.0,cuda / NVIDIA GeForce RTX 4060 Laptop GPU,1,"torch 2.8.0+cu126, threads=20"
+resnet18,11.18,3.627,1.944,0.344,1.84,514.3,cuda / NVIDIA GeForce RTX 4060 Laptop GPU,1,"torch 2.8.0+cu126, threads=20"

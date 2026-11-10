@@ -1,0 +1,4 @@
+model,params_m,flops_g,latency_ms_mean,latency_ms_std,latency_ms_p50,fps,device,batch_size,notes
+cnn,1.175,5.173,22.481,3.586,21.63,44.5,"cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",1,"torch 2.8.0+cu126, threads=20"
+mobilenet_v3_small,1.524,0.111,20.752,5.123,19.662,48.2,"cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",1,"torch 2.8.0+cu126, threads=20"
+resnet18,11.18,3.627,28.673,4.845,27.898,34.9,"cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",1,"torch 2.8.0+cu126, threads=20"

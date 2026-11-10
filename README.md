@@ -238,3 +238,44 @@ python scripts/check_pipeline.py
 
 8 项检查：划分文件 / 字段 / 无泄漏 / 图片可读 / 抽样可解码 / 扰动生效 / 指标正确 / Dataset 可用（本地无 torch 时最后一项 SKIP，须在 Kaggle 补验）。
 全绿才算 A 岗完成，其他人才能开工。
+
+---
+
+## 8. C 岗：MobileNetV3 / Grad-CAM / Demo
+
+模型注册表在 `src/models/build.py`：`build_model(name, num_classes=6, pretrained=True)`，
+可选 `cnn | resnet18 | mobilenet_v3_small`。三个模型都拆成 `.backbone / .head`，
+训练统一走 B 的 `src/train.py`。注册表里另有 C 岗用的 `get_target_layer / load_checkpoint /
+guess_model_name / count_parameters`（Grad-CAM 与 Demo 依赖）。
+
+```bash
+# E1e：MobileNetV3 预训练全量微调（与 E1b 的 resnet18 ft 同配置，只换模型）
+python -m src.train --config configs/e1_mobilenet_v3_small.yaml --seed 42
+# 从零训练对照
+python -m src.train --config configs/e1_mobilenet_v3_small.yaml --seed 42 \
+    --set model.pretrained=false --run-name e1e_mobilenet_v3_small_scratch_r100_s42
+
+# 本地没数据也能先把流程跑通（假数据，CPU 即可）
+python scripts/make_dummy_data.py --per-class 20
+python scripts/prepare_data.py --root data/raw/dummy --out data/splits_dummy
+python -m src.train --config configs/e1_mobilenet_v3_small.yaml --seed 42 \
+    --set data.root=data/raw/dummy data.split_dir=data/splits_dummy train.epochs=3 data.num_workers=0 \
+    --run-name smoke_mobilenet --no-append
+
+# 参数量 / FLOPs / 推理延迟 → results/model_cost.csv
+python scripts/profile_models.py
+# 轻量模型在 CPU 上的优势更明显，报告里可两份都放
+python scripts/profile_models.py --device cpu --out results/model_cost_cpu.csv
+
+# Grad-CAM：扰动图直接来自 build_loaders，不改数据管线
+python -m src.models.gradcam --ckpt runs/e1e_mobilenet_v3_small_ft_r100_s42/best.pth \
+    --corruption blur --severity 4 --num 8
+python -m src.models.gradcam --ckpt runs/e1e_mobilenet_v3_small_ft_r100_s42/best.pth --corruption clean
+
+# Demo：上传叶片 → 预测 + 热力图
+python app.py --ckpt runs/e1e_mobilenet_v3_small_ft_r100_s42/best.pth
+```
+
+`app.py` 的预处理直接复用 `build_eval_transform`（Resize 256 → CenterCrop 224 → Normalize），
+与评测同一条链路；改尺寸或 mean/std 只改 yaml，不要在 demo 里另写一套。
+`app.py` 用 `server_name="127.0.0.1"` 启动，本机开着系统代理时也不会在启动自检阶段 502。
