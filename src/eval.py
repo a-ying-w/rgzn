@@ -50,6 +50,7 @@ def main() -> None:
         ckpt["arch"], num_classes=num_classes, pretrained=bool(ckpt["pretrained"])
     ).to(device)
     model.load_state_dict(ckpt["state_dict"])
+    params_m = sum(p.numel() for p in model.parameters()) / 1e6
 
     corruption = args.corruption if args.severity > 0 else None
     loaders = build_loaders(
@@ -99,7 +100,7 @@ def main() -> None:
                 "severity": args.severity if corruption else 0,
                 "acc": round(metrics["acc"], 4),
                 "macro_f1": round(metrics["macro_f1"], 4),
-                "params_m": "",
+                "params_m": round(params_m, 2),
                 "notes": f"eval from {ckpt_path.parent.name} variant={cfg['data'].get('variant', 'color')}",
             },
         )
