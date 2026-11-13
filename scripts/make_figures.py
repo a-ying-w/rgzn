@@ -86,6 +86,86 @@ def fig_e4_cross_domain(df: pd.DataFrame) -> None:
     print(f"[figure] {out.relative_to(ROOT)}")
 
 
+def fig_e3_robustness(df: pd.DataFrame) -> None:
+    """E3：4 模型 × 3 扰动 × 5 档严重度的鲁棒性曲线。
+
+    results.csv 中 E3 行的 notes 形如 "eval from e1b_resnet18_ft_r100_s42 variant=color"，
+    从中解析 base 模型名（e1a/e1b/e1c/e1d）。
+    取数约定：exp_id=e3, split=test, severity∈[1..5]。
+    """
+    import re
+
+    e3 = df[(df["exp_id"] == "e3") & (df["split"] == "test")].copy()
+    if e3.empty:
+        print("[figure] e3 暂无数据，跳过鲁棒性曲线")
+        return
+
+    # 从 notes 解析 base 模型："eval from e1b_resnet18_ft_r100_s42 variant=color"
+    def parse_base(notes) -> str | None:
+        if not isinstance(notes, str):
+            return None
+        m = re.search(r"eval from (e1[abcd])_", notes)
+        return m.group(1) if m else None
+
+    e3["base"] = e3["notes"].apply(parse_base)
+    e3 = e3[e3["base"].notna()]
+    if e3.empty:
+        print("[figure] e3 行无法解析 base 模型，跳过鲁棒性曲线")
+        return
+
+    # base → 展示标签
+    BASE_LABEL = {
+        "e1a": "resnet18-scratch",
+        "e1b": "resnet18-ft",
+        "e1c": "cnn-scratch",
+        "e1d": "resnet18-ft-cw",
+    }
+    CORRS = ["brightness", "rotation", "blur"]
+    SEVERITIES = [1, 2, 3, 4, 5]
+    PALETTE = ["#4C78A8", "#F58518", "#54A24B", "#E45756"]  # 4 模型
+
+    # 每个扰动一张子图，3 张横排
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4.2), dpi=150, sharey=True)
+    fig.suptitle("E3 鲁棒性：随扰动严重度下降的 macro-F1", fontsize=13, y=1.02)
+
+    for ax, corr in zip(axes, CORRS):
+        for idx, (base, label) in enumerate(BASE_LABEL.items()):
+            sub = e3[(e3["base"] == base) & (e3["corruption"] == corr)]
+            if sub.empty:
+                continue
+            # severity → macro_f1 的有序点
+            points = []
+            for sev in SEVERITIES:
+                hit = sub[sub["severity"] == sev]
+                if not hit.empty:
+                    points.append((sev, float(hit["macro_f1"].mean())))
+            if not points:
+                continue
+            xs, ys = zip(*points)
+            ax.plot(xs, ys, marker="o", label=label, color=PALETTE[idx], linewidth=2)
+
+        ax.set_xlabel("severity")
+        ax.set_xticks(SEVERITIES)
+        ax.set_title(f"扰动: {corr}")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(alpha=0.25)
+
+    axes[0].set_ylabel("test macro-F1")
+    # 把 legend 放在中间子图顶部外
+    axes[1].legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+
+    known_f1s = e3["macro_f1"].dropna()
+    if not known_f1s.empty:
+        axes[0].set_ylim(max(0.0, known_f1s.min() - 0.05), 1.02)
+
+    fig.tight_layout()
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIG_DIR / "e3_robustness_curves.png"
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[figure] {out.relative_to(ROOT)}")
+
+
 def main() -> int:
     if not RESULTS.exists():
         print(f"缺少 {RESULTS}", file=sys.stderr)
@@ -93,6 +173,7 @@ def main() -> int:
     df = pd.read_csv(RESULTS)
     df.columns = [c.strip().lstrip("﻿") for c in df.columns]  # 去 BOM
     fig_e4_cross_domain(df)
+    fig_e3_robustness(df)
     return 0
 
 
