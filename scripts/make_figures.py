@@ -86,6 +86,60 @@ def fig_e4_cross_domain(df: pd.DataFrame) -> None:
     print(f"[figure] {out.relative_to(ROOT)}")
 
 
+CORRUPTION_CN = {
+    "brightness": "亮度（0.90→0.30）",
+    "rotation": "旋转（10°→60°）",
+    "blur": "模糊（0.6→3.2）",
+}
+
+MODEL_CN = {
+    "e1a": "resnet18-从零",
+    "e1b": "resnet18-微调",
+    "e1c": "自建CNN",
+    "e1d": "resnet18-微调+类权重",
+}
+
+
+def fig_e3_robustness(df: pd.DataFrame) -> None:
+    """E3：三种扰动 × 5 档严重度下的 test macro-F1 曲线（每个模型一条）。"""
+    d = df[
+        df["exp_id"].astype(str).str.match(r"^e3[a-d]?$")
+        & (df["split"] == "test")
+        & (df["corruption"].isin(CORRUPTION_CN))
+    ].copy()
+    if d.empty:
+        print("[figure] 跳过 E3：results.csv 里还没有 E3 行")
+        return
+
+    # 模型来源：优先按 notes 里的 "eval from e1x_"，否则用 exp_id 后缀（e3a→e1a）
+    src = d["notes"].astype(str).str.extract(r"eval from (e1[a-d])_")[0]
+    fallback = "e1" + d["exp_id"].astype(str).str.extract(r"^e3([a-d])$")[0]
+    d["src"] = src.fillna(fallback)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4.2), dpi=150, sharey=True)
+    for ax, corr in zip(axes, CORRUPTION_CN):
+        sub = d[d["corruption"] == corr]
+        for src_key in sorted(sub["src"].unique()):
+            g = sub[sub["src"] == src_key].groupby("severity")["macro_f1"].mean().sort_index()
+            ax.plot(g.index, g.values, marker="o", label=MODEL_CN.get(src_key, src_key))
+        ax.set_title(CORRUPTION_CN[corr], fontsize=11)
+        ax.set_xlabel("扰动严重度")
+        ax.set_xticks([1, 2, 3, 4, 5])
+        ax.grid(alpha=0.3)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_ylabel("test macro-F1")
+    axes[0].set_ylim(0, 1.02)
+    axes[-1].legend(fontsize=9, frameon=False)
+    fig.suptitle("E3 扰动鲁棒性：模型在不同退化强度下的表现", fontsize=12)
+    fig.tight_layout()
+
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIG_DIR / "e3_robustness_curves.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[figure] {out.relative_to(ROOT)}")
+
+
 def main() -> int:
     if not RESULTS.exists():
         print(f"缺少 {RESULTS}", file=sys.stderr)
@@ -93,6 +147,7 @@ def main() -> int:
     df = pd.read_csv(RESULTS)
     df.columns = [c.strip().lstrip("﻿") for c in df.columns]  # 去 BOM
     fig_e4_cross_domain(df)
+    fig_e3_robustness(df)
     return 0
 
 
