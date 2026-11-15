@@ -28,6 +28,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/base.yaml")
     ap.add_argument("--set", nargs="*", default=[])
+    ap.add_argument(
+        "--data-root", default=None, help="覆盖 data.root（等价于 --set data.root=...）"
+    )
     ap.add_argument("--ckpt", required=True, help="runs/<run_name>/best.pth")
     ap.add_argument("--split", default="test", choices=["train", "val", "test"])
     ap.add_argument("--corruption", default=None, help="brightness | rotation | blur")
@@ -38,6 +41,8 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg = load_with_overrides(args.config, args.set)
+    if args.data_root is not None:
+        cfg["data"]["root"] = args.data_root
     set_seed(int(cfg.get("seed", 42)))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

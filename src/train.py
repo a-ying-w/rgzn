@@ -95,12 +95,17 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/base.yaml")
     ap.add_argument("--set", nargs="*", default=[], help="临时覆盖，如 train.epochs=5")
+    ap.add_argument(
+        "--data-root", default=None, help="覆盖 data.root（等价于 --set data.root=...）"
+    )
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--run-name", default=None)
     ap.add_argument("--no-append", action="store_true")
     args = ap.parse_args()
 
     cfg = load_with_overrides(args.config, args.set)
+    if args.data_root is not None:
+        cfg["data"]["root"] = args.data_root
     if args.seed is not None:
         cfg["seed"] = args.seed
     seed = int(cfg.get("seed", 42))
