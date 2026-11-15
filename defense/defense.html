@@ -1,0 +1,225 @@
+<!-- 植物叶片病害识别 · 课程项目答辩 -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="scholar-teal">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-content-type" content="presentation" />
+<meta name="x-presentation-version" content="1.0" />
+<meta name="x-presentation-indicator" content="deck-stage .slide" />
+<title>植物叶片病害识别 · 答辩</title>
+<link rel="stylesheet" href="./_shared/fonts.css">
+<link rel="stylesheet" href="./_shared/base.css">
+<link id="theme-link" rel="stylesheet" href="./_shared/themes/scholar-teal.css">
+<link rel="stylesheet" href="./_shared/animations/animations.css">
+<style>
+  /* 仅作用于 slide 内部子元素，不触碰 .slide 定位 */
+  .num-xl { font-size: 92px; font-weight: 800; line-height: .9; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .num-xl .unit { font-size: 28px; font-weight: 500; opacity: .45; margin-left: 6px; }
+  .stat-label { font-size: 15px; color: var(--text-3); margin-top: 10px; letter-spacing: .04em; }
+  .stat-card { padding: 26px 24px; border-radius: 18px; background: var(--surface-2); border: 1px solid color-mix(in srgb, var(--text-1) 8%, transparent); }
+  .fig { width: 100%; border-radius: 14px; display: block; }
+  .fig-cap { font-size: 14px; color: var(--text-3); margin-top: 10px; }
+  .t { width: 100%; border-collapse: collapse; font-size: 21px; }
+  .t th { text-align: left; font-weight: 600; font-size: 16px; color: var(--text-3); letter-spacing: .08em; padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--text-1) 12%, transparent); }
+  .t td { padding: 11px 14px; border-bottom: 1px solid color-mix(in srgb, var(--text-1) 7%, transparent); }
+  .t td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .t tr.hl td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+  .t tr.pending td { color: var(--text-3); font-style: italic; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; background: var(--surface-2); color: var(--text-2); }
+  .badge.good { background: color-mix(in srgb, #2f9e6f 18%, transparent); color: #1f7a54; }
+  .badge.warn { background: color-mix(in srgb, #d98324 18%, transparent); color: #9a5b12; }
+  .qa { font-size: 19px; line-height: 1.65; }
+  .qa b { color: var(--accent); }
+  .twofig { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .takeaway { padding: 22px 26px; border-left: 5px solid var(--accent); background: var(--surface-2); border-radius: 0 14px 14px 0; font-size: 23px; line-height: 1.55; }
+</style>
+</head>
+<body data-themes="scholar-teal,academic-paper,navy-formal,minimal-white" data-theme-base="./_shared/themes/">
+<deck-stage width="1920" height="1080">
+
+  <!-- 1 封面 -->
+  <section class="slide active center tc" data-deck-label="封面">
+    <p class="kicker anim-fade-down" data-anim="fade-down">课程项目 · 计算机视觉</p>
+    <h1 class="h1 anim-fade-up" data-anim="fade-up" style="font-size:104px">番茄叶片病害识别</h1>
+    <p class="lede" style="max-width:1100px;margin:24px auto 0">数据划分防泄漏 · 多因素消融 · 背景依赖分析</p>
+    <p class="dim2 mt-s" style="font-size:19px">PlantVillage · 6 类 · 9350 张 · 2026</p>
+    <div class="notes">开场一句话：我们做的是番茄 6 类叶片病害识别，重点不是刷精度，而是回答三个问题——数据怎么划分才可信、各个训练因素各贡献多少、模型到底在看病斑还是看背景。</div>
+  </section>
+
+  <!-- 2 目录 -->
+  <section class="slide" data-deck-label="目录">
+    <p class="kicker">Agenda</p>
+    <h2 class="h2">今天讲四件事</h2>
+    <div class="grid g2" style="margin-top:56px;gap:28px">
+      <div class="card card-soft" data-anim="fade-up">
+        <h3>01 &nbsp;数据与评测设计</h3>
+        <p class="dim">9350 张、pHash 去重、按组分层划分、为什么用 macro-F1</p>
+      </div>
+      <div class="card card-soft" data-anim="fade-up">
+        <h3>02 &nbsp;主结果</h3>
+        <p class="dim">预训练 / 模型规模 / 类别加权的六组对照</p>
+      </div>
+      <div class="card card-soft" data-anim="fade-up">
+        <h3>03 &nbsp;鲁棒性与可解释性</h3>
+        <p class="dim">三类扰动曲线 + Grad-CAM 热力图</p>
+      </div>
+      <div class="card card-soft" data-anim="fade-up">
+        <h3>04 &nbsp;核心发现</h3>
+        <p class="dim">跨域掉 34 个点：模型严重依赖背景</p>
+      </div>
+    </div>
+    <div class="notes">30 秒过。强调最后一条是全场重点。</div>
+  </section>
+
+  <!-- 3 数据与方法 -->
+  <section class="slide" data-deck-label="数据与评测设计">
+    <p class="kicker">01 · 数据与评测设计</p>
+    <h2 class="h2">先解决"指标可信"这件事</h2>
+    <div class="grid" style="grid-template-columns:1.05fr .95fr;gap:44px;margin-top:34px;align-items:start">
+      <div>
+        <div class="grid g3" style="gap:16px">
+          <div class="stat-card"><div class="num-xl">9350</div><div class="stat-label">图片（6 类）</div></div>
+          <div class="stat-card"><div class="num-xl">8847</div><div class="stat-label">去重后组数</div></div>
+          <div class="stat-card"><div class="num-xl">2.2<span class="unit">×</span></div><div class="stat-label">最大 / 最小类</div></div>
+        </div>
+        <p class="mt-s" style="font-size:21px;line-height:1.7">
+          同一片叶子会被拍多张，若按图片随机划分，近重复图会同时落进训练集和测试集，指标虚高。
+          因此先用 <b>pHash（汉明距离 ≤ 8）</b>聚类，9350 张聚成 8847 组，<b>按组</b>做 70/15/15 分层划分。
+        </p>
+        <p class="mt-s" style="font-size:21px;line-height:1.7">
+          划分文件用 sha256 冻结，类别不均衡 2.2 倍，所以主指标用 <b>macro-F1</b>，而不是准确率。
+        </p>
+      </div>
+      <div>
+        <img class="fig" src="./assets/class_distribution.png" alt="类别分布">
+        <p class="fig-cap">图 1　六类样本分布：952（Leaf Mold）到 2127（Bacterial Spot）</p>
+      </div>
+    </div>
+    <div class="notes">这一页是我负责的部分。关键词：近重复泄漏。可以补一句：如果不做这步，测试集会有同叶照片，精度会虚高几个点。</div>
+  </section>
+
+  <!-- 4 章节分隔 -->
+  <section class="slide center tc" data-deck-label="章节：实验与结果">
+    <p class="kicker">02</p>
+    <h1 class="h1" style="font-size:96px">实验与结果</h1>
+    <p class="lede">六组对照 · 三类扰动 · 一次跨域</p>
+    <div class="notes">过渡页，一句话带过。</div>
+  </section>
+
+  <!-- 5 主结果 -->
+  <section class="slide" data-deck-label="主结果">
+    <p class="kicker">02 · 主结果</p>
+    <h2 class="h2">预训练权重是精度的主要来源</h2>
+    <table class="t" style="margin-top:26px">
+      <thead>
+        <tr><th>配置</th><th>模型</th><th>预训练</th><th class="num">参数量</th><th class="num">test macro-F1</th><th>结论</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>E0 冻结主干</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">0.8907</td><td><span class="badge">只训 head 不够</span></td></tr>
+        <tr><td>E1a 从零训练</td><td>ResNet18</td><td>✗</td><td class="num">11.18M</td><td class="num">0.9807</td><td><span class="badge">数据量够，但不如预训练</span></td></tr>
+        <tr class="hl"><td>E1b 全量微调</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">0.9953</td><td><span class="badge good">最优基线</span></td></tr>
+        <tr><td>E1c 自建 CNN</td><td>CNN</td><td>✗</td><td class="num">1.17M</td><td class="num">0.9745</td><td><span class="badge">轻量可用</span></td></tr>
+        <tr><td>E1d 类别加权</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">0.9950</td><td><span class="badge">不均衡已不构成瓶颈</span></td></tr>
+        <tr><td>E1e MobileNetV3</td><td>MobileNetV3-S</td><td>✓</td><td class="num">1.52M</td><td class="num">0.9958</td><td><span class="badge good">1/7 参数，精度更高</span></td></tr>
+        <tr class="pending"><td>E2 增强消融</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">待补</td><td>四组配置已就绪，正在跑</td></tr>
+      </tbody>
+    </table>
+    <p class="mt-s dim" style="font-size:18px">验证集用于选模型与调参，测试集仅在最终评测时使用；每格为 val / test 中的 test 一行。</p>
+    <div class="notes">讲三句就够：①冻结主干只有 89%，说明特征没适配；②从零训练 98.1%，预训练 99.5%，差 1.5 点；③MobileNet 参数只有 1/7 却持平，说明任务对模型容量不敏感。</div>
+  </section>
+
+  <!-- 6 E4 跨域 -->
+  <section class="slide" data-deck-label="核心发现：背景依赖">
+    <p class="kicker">02 · 核心发现（E4）</p>
+    <h2 class="h2">换个背景，精度掉 34 个点</h2>
+    <div class="grid" style="grid-template-columns:1.15fr .85fr;gap:44px;margin-top:26px;align-items:center">
+      <div>
+        <img class="fig" src="./assets/e4_cross_domain.png" alt="跨域对比">
+        <p class="fig-cap">图 2　训练 / 测试域组合对比（test macro-F1）</p>
+      </div>
+      <div>
+        <div class="grid" style="gap:18px">
+          <div class="stat-card"><div class="num-xl">0.9953</div><div class="stat-label">color → color（基准）</div></div>
+          <div class="stat-card" style="border-color:color-mix(in srgb,#d98324 40%,transparent)"><div class="num-xl" style="color:#b0651a">0.6571</div><div class="stat-label">color → segmented（跨域）</div></div>
+          <div class="stat-card"><div class="num-xl">0.9954</div><div class="stat-label">segmented → segmented（上界）</div></div>
+        </div>
+        <div class="takeaway mt-s" style="margin-top:26px">上界能回到 0.995，说明<b>模型能力没问题</b>——它只是依赖了背景。</div>
+      </div>
+    </div>
+    <div class="notes">这是全场最有价值的一页。讲法：先把三行数字念一遍，再补那句"能力没问题，是捷径"。可以主动说：这意味着真实田间场景下 99.5% 会被明显高估。</div>
+  </section>
+
+  <!-- 7 E3 鲁棒性 -->
+  <section class="slide" data-deck-label="鲁棒性">
+    <p class="kicker">03 · 鲁棒性（E3）</p>
+    <h2 class="h2">怕模糊、怕变暗，不怕转</h2>
+    <div class="grid" style="grid-template-columns:1.2fr .8fr;gap:40px;margin-top:24px;align-items:center">
+      <div>
+        <img class="fig" src="./assets/e3_robustness_curves.png" alt="鲁棒性曲线">
+        <p class="fig-cap">图 3　4 个模型 × 3 类扰动 × 5 个强度（共 60 组）</p>
+      </div>
+      <div style="font-size:21px;line-height:1.75">
+        <p><b>旋转：</b>5 级仍有 0.95+，叶片近似各向同性，模型几乎不变性。</p>
+        <p class="mt-s"><b>模糊：</b>最脆弱。ResNet18 预训练在 5 级掉到 0.37。</p>
+        <p class="mt-s"><b>亮度：</b>预训练模型 5 级仍有 0.93，自建 CNN 直接崩到 0.08。</p>
+        <p class="mt-s dim">→ 预训练权重不仅提精度，也显著提鲁棒性。</p>
+      </div>
+    </div>
+    <div class="notes">不用逐条念曲线，只讲三个结论。如果老师问"为什么模糊最脆弱"：病斑纹理细节是判别依据，模糊把高频信息抹掉了。</div>
+  </section>
+
+  <!-- 8 Grad-CAM -->
+  <section class="slide" data-deck-label="可解释性">
+    <p class="kicker">03 · 可解释性</p>
+    <h2 class="h2">模型在看哪里</h2>
+    <div class="twofig" style="margin-top:30px">
+      <div>
+        <img class="fig" src="./assets/gradcam_mobilenet_v3_small_clean.png" alt="干净图 Grad-CAM">
+        <p class="fig-cap">干净输入：注意力集中在病斑区域</p>
+      </div>
+      <div>
+        <img class="fig" src="./assets/gradcam_mobilenet_v3_small_blur_s4.png" alt="模糊图 Grad-CAM">
+        <p class="fig-cap">模糊（severity 4）：注意力扩散、失焦</p>
+      </div>
+    </div>
+    <p class="mt-s" style="font-size:21px">注意力分布与 E3 的掉点一致：模糊破坏纹理 → 热区扩散 → 判别失效。</p>
+    <div class="notes">如果老师追问"热力图能不能证明模型在看病斑"，老实说这是相关证据不是因果证明，但和 E4 的背景依赖结论互相印证。</div>
+  </section>
+
+  <!-- 9 结论 -->
+  <section class="slide" data-deck-label="结论与局限">
+    <p class="kicker">04 · 结论</p>
+    <h2 class="h2">三条结论，两个局限</h2>
+    <div class="grid g2" style="gap:34px;margin-top:34px">
+      <div class="card card-soft">
+        <h3>结论</h3>
+        <p style="font-size:20px;line-height:1.75">
+          ① 数据侧：pHash 按组去重后，99.5% 仍成立，结论不是靠泄漏得来的。<br>
+          ② 训练侧：预训练权重贡献最大（+1.5 点），模型规模影响很小。<br>
+          ③ 可信度侧：模型严重依赖背景，跨域掉 34 点，真实场景需重新评估。
+        </p>
+      </div>
+      <div class="card card-soft">
+        <h3>局限与后续</h3>
+        <p style="font-size:20px;line-height:1.75">
+          ① 仅单一种子（seed 42），未做多种子置信区间。<br>
+          ② 仅番茄 6 类，未验证跨作物泛化。<br>
+          后续：多种子重复 + 背景增广（随机换背景）来降低背景依赖。
+        </p>
+      </div>
+    </div>
+    <p class="mt-s dim" style="font-size:18px">全部代码、冻结划分、结果表与作图脚本开源：github.com/a-ying-w/rgzn</p>
+    <div class="notes">局限一定要自己先说，老师就不会追着问。多种子那条我们确实没做，说了显得诚实。</div>
+  </section>
+
+  <!-- 10 结束 -->
+  <section class="slide center tc" data-deck-label="谢谢">
+    <h1 class="h1" style="font-size:150px;line-height:1"><span class="gradient-text">谢谢</span></h1>
+    <p class="lede" style="margin-top:20px">请老师批评指正</p>
+    <div class="notes">留白等待提问。备用问答在下方的私聊备忘里。</div>
+  </section>
+
+</deck-stage>
+<script src="./_shared/runtime.js"></script>
+<script src="./_shared/echarts-theme-sync.js"></script>
+</body></html>
