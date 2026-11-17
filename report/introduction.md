@@ -2,7 +2,7 @@
 
 > 全文编排：引言（前置，不单独编号）→ 第 1 章 数据与实验设置（`data_and_setup.md`）→ 第 2 章 方法（`method.md`）
 > → 第 3 章 结果与分析（`results.md`）→ 第 4 章 结论与展望（`conclusion.md`）→ 参考文献（`references.md`）。
-> 摘要待 E2 结果入库后统一补写，此处不写。
+> 摘要见 `abstract.md`（置于引言之前），关键词附于摘要末尾；E2 结果已入库，摘要已按 `results/results.csv` 定稿。
 
 ## 1. 研究背景
 

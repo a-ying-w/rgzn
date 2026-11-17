@@ -86,6 +86,72 @@ def fig_e4_cross_domain(df: pd.DataFrame) -> None:
     print(f"[figure] {out.relative_to(ROOT)}")
 
 
+def get_macro_f1_pt(df: pd.DataFrame, exp_id: str, pretrained: bool) -> float | None:
+    """取指定 exp_id + 是否预训练 的 test clean macro-F1；多 seed 取均值；没有则返回 None。"""
+    pt = df["pretrained"].astype(str).str.lower() == "true"
+    hit = df[
+        (df["exp_id"] == exp_id)
+        & (pt == pretrained)
+        & (df["split"] == "test")
+        & (df["corruption"] == "clean")
+    ]
+    if hit.empty:
+        return None
+    return float(hit["macro_f1"].mean())
+
+
+def fig_e2_aug(df: pd.DataFrame) -> None:
+    """E2：none/basic/strong 三档增强 × {微调, 从零} 的 test macro-F1。
+
+    basic 臂直接复用既有结果（微调=e1b，从零=e1a），其余两档取 e2a/e2c。
+    """
+    specs = [
+        ("none", "e2a", "e2a"),
+        ("basic", "e1b", "e1a"),
+        ("strong", "e2c", "e2c"),
+    ]
+    labels = [s[0] for s in specs]
+    ft = [get_macro_f1_pt(df, s[1], True) for s in specs]
+    sc = [get_macro_f1_pt(df, s[2], False) for s in specs]
+
+    fig, ax = plt.subplots(figsize=(7, 4.5), dpi=150)
+    x = range(len(labels))
+    w = 0.36
+    bars_ft = ax.bar([i - w / 2 for i in x], [v if v is not None else 0 for v in ft],
+                     width=w, color="#4C78A8", label="预训练微调")
+    bars_sc = ax.bar([i + w / 2 for i in x], [v if v is not None else 0 for v in sc],
+                     width=w, color="#F58518", label="从零训练")
+
+    known = [v for v in ft + sc if v is not None]
+    ymin = max(0.0, min(known) - 0.02) if known else 0.0
+    ax.set_ylim(ymin, 1.005)
+
+    for bars, vals in ((bars_ft, ft), (bars_sc, sc)):
+        for bar, v in zip(bars, vals):
+            if v is None:
+                ax.text(bar.get_x() + bar.get_width() / 2, ymin + 0.002, "待跑",
+                        ha="center", va="bottom", fontsize=9, color="#888888")
+            else:
+                ax.text(bar.get_x() + bar.get_width() / 2, v + 0.0015, f"{v:.4f}",
+                        ha="center", va="bottom", fontsize=9)
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(labels)
+    ax.set_xlabel("增强档位")
+    ax.set_ylabel("test macro-F1")
+    ax.set_title("E2 数据增强消融：干净测试集上的精度")
+    ax.grid(axis="y", alpha=0.3)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(fontsize=9, frameon=False)
+    fig.tight_layout()
+
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIG_DIR / "e2_aug_ablation.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[figure] {out.relative_to(ROOT)}")
+
+
 CORRUPTION_CN = {
     "brightness": "亮度（0.90→0.30）",
     "rotation": "旋转（10°→60°）",
@@ -148,6 +214,7 @@ def main() -> int:
     df.columns = [c.strip().lstrip("﻿") for c in df.columns]  # 去 BOM
     fig_e4_cross_domain(df)
     fig_e3_robustness(df)
+    fig_e2_aug(df)
     return 0
 
 
