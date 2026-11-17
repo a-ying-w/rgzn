@@ -57,7 +57,7 @@
       </div>
       <div class="card card-soft" data-anim="fade-up">
         <h3>02 &nbsp;主结果</h3>
-        <p class="dim">预训练 / 模型规模 / 类别加权的六组对照</p>
+        <p class="dim">预训练 / 模型规模 / 类别加权 / 增强消融的对照</p>
       </div>
       <div class="card card-soft" data-anim="fade-up">
         <h3>03 &nbsp;鲁棒性与可解释性</h3>
@@ -121,11 +121,11 @@
         <tr><td>E1c 自建 CNN</td><td>CNN</td><td>✗</td><td class="num">1.17M</td><td class="num">0.9745</td><td><span class="badge">轻量可用</span></td></tr>
         <tr><td>E1d 类别加权</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">0.9950</td><td><span class="badge">不均衡已不构成瓶颈</span></td></tr>
         <tr><td>E1e MobileNetV3</td><td>MobileNetV3-S</td><td>✓</td><td class="num">1.52M</td><td class="num">0.9958</td><td><span class="badge good">1/7 参数，精度更高</span></td></tr>
-        <tr class="pending"><td>E2 增强消融</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">待补</td><td>四组配置已就绪，正在跑</td></tr>
+        <tr><td>E2 增强消融（none / strong）</td><td>ResNet18</td><td>✓</td><td class="num">11.18M</td><td class="num">0.9892 / 0.9913</td><td><span class="badge warn">basic 最优，strong 过增强</span></td></tr>
       </tbody>
     </table>
     <p class="mt-s dim" style="font-size:18px">验证集用于选模型与调参，测试集仅在最终评测时使用；每格为 val / test 中的 test 一行。</p>
-    <div class="notes">讲三句就够：①冻结主干只有 89%，说明特征没适配；②从零训练 98.1%，预训练 99.5%，差 1.5 点；③MobileNet 参数只有 1/7 却持平，说明任务对模型容量不敏感。</div>
+    <div class="notes">讲三句就够：①冻结主干只有 89%，说明特征没适配；②从零训练 98.1%，预训练 99.5%，差 1.5 点；③MobileNet 参数只有 1/7 却持平，说明任务对模型容量不敏感。E2 补一句：basic 最强（0.9953），去掉增强掉到 0.9892，换成 RandAugment 的强增强也只有 0.9913，说明 6544 张的规模撑不住过增强，也扛不住完全不增强。</div>
   </section>
 
   <!-- 6 E4 跨域 -->
