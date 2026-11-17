@@ -168,7 +168,7 @@ python -m src.train --config configs/base.yaml --set train.epochs=5 model.name=m
 |---|---|---|
 | **A** | 数据与基建 | ✅ `splits`、`dedupe`、`corruptions`、`dataset`、`transforms`、`metrics`、`table`、仓库骨架、`configs/e0_resnet18_ft.yaml` |
 | **B** | 模型与训练 | ✅ `src/models/cnn.py`、`build.py`、`src/train.py`、`src/eval.py` |
-| **C** | MobileNet + 可解释 + Demo | ⬜ `mobilenet_v3_small`、Grad-CAM、`app.py` |
+| **C** | MobileNet + 可解释 + Demo | ✅ `mobilenet_v3_small`、Grad-CAM、`app.py`、`report/interpretability.md` |
 | **D** | 实验编排与分析 | ⬜ E2/E3/E4、图表、报告 |
 
 **B 的 `train.py` 约定**（D 会依赖）：
