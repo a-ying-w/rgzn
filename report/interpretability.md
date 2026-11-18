@@ -40,11 +40,11 @@ Grad-CAM 从**模型侧**提供第二个视角：如果模型真正依据病斑�
 
 ![干净输入](figures/gradcam_mobilenet_v3_small_clean.png)
 
-*图 5：干净输入。左为输入，中为 Grad-CAM，右为叠加；行标题为真实类与预测类（括号内为置信度）。*
+*图 6：干净输入。左为输入，中为 Grad-CAM，右为叠加；行标题为真实类与预测类（括号内为置信度）。*
 
 ![模糊 severity 4](figures/gradcam_mobilenet_v3_small_blur_s4.png)
 
-*图 6：blur severity=4。同一批样本，注意力扩散、置信度整体下滑。*
+*图 7：blur severity=4。同一批样本，注意力扩散、置信度整体下滑。*
 
 三点观察：
 

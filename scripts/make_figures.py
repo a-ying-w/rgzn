@@ -11,6 +11,7 @@ E4 跨域对比图取数约定（三组的 test macro-F1）：
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -18,11 +19,13 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "results.csv"
 FIG_DIR = ROOT / "results" / "figures"
+E4A_EVAL = ROOT / "runs" / "e4a_color2seg_resnet18_ft_s42" / "eval.json"
 
 # Windows 中文字体，避免负号乱码
 plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "sans-serif"]
@@ -81,6 +84,54 @@ def fig_e4_cross_domain(df: pd.DataFrame) -> None:
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     out = FIG_DIR / "e4_cross_domain.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"[figure] {out.relative_to(ROOT)}")
+
+
+CLASS_SHORT = {
+    "Tomato___Bacterial_spot": "Bacterial spot",
+    "Tomato___Early_blight": "Early blight",
+    "Tomato___Late_blight": "Late blight",
+    "Tomato___Leaf_Mold": "Leaf mold",
+    "Tomato___Septoria_leaf_spot": "Septoria spot",
+    "Tomato___healthy": "Healthy",
+}
+
+
+def fig_e4a_confusion() -> None:
+    """E4a 跨域混淆矩阵：按行归一化着色，格内标原始样本数。
+
+    取数：runs/e4a_color2seg_resnet18_ft_s42/eval.json 的 metrics.confusion_matrix。
+    """
+    if not E4A_EVAL.exists():
+        print(f"[figure] 跳过 E4a 混淆矩阵：缺少 {E4A_EVAL.relative_to(ROOT)}")
+        return
+    data = json.loads(E4A_EVAL.read_text(encoding="utf-8"))
+    classes = [CLASS_SHORT.get(c, c) for c in data["class_names"]]
+    cm = np.asarray(data["metrics"]["confusion_matrix"], dtype=float)
+    row = cm / cm.sum(axis=1, keepdims=True)
+
+    fig, ax = plt.subplots(figsize=(7.4, 5.8), dpi=150)
+    im = ax.imshow(row, cmap="Blues", vmin=0, vmax=1)
+    ax.set_xticks(range(len(classes)))
+    ax.set_yticks(range(len(classes)))
+    ax.set_xticklabels(classes, rotation=32, ha="right", fontsize=9)
+    ax.set_yticklabels(classes, fontsize=9)
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            if cm[i, j] == 0:
+                continue
+            ax.text(j, i, f"{int(cm[i, j])}", ha="center", va="center", fontsize=8,
+                    color="white" if row[i, j] > 0.55 else "#333333")
+    ax.set_xlabel("预测类别")
+    ax.set_ylabel("真实类别")
+    ax.set_title("E4a 跨域混淆矩阵（color→segmented，行归一化，格内为样本数）")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03, label="行内占比")
+    fig.tight_layout()
+
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIG_DIR / "e4a_confusion_matrix.png"
     fig.savefig(out)
     plt.close(fig)
     print(f"[figure] {out.relative_to(ROOT)}")
@@ -213,6 +264,7 @@ def main() -> int:
     df = pd.read_csv(RESULTS)
     df.columns = [c.strip().lstrip("﻿") for c in df.columns]  # 去 BOM
     fig_e4_cross_domain(df)
+    fig_e4a_confusion()
     fig_e3_robustness(df)
     fig_e2_aug(df)
     return 0
