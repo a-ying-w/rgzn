@@ -211,16 +211,17 @@ CORRUPTION_CN = {
 
 MODEL_CN = {
     "e1a": "resnet18-从零",
-    "e1b": "resnet18-微调",
+    "e1b": "resnet18-微调(basic)",
     "e1c": "自建CNN",
     "e1d": "resnet18-微调+类权重",
+    "e2c": "resnet18-微调(strong)",
 }
 
 
 def fig_e3_robustness(df: pd.DataFrame) -> None:
     """E3：三种扰动 × 5 档严重度下的 test macro-F1 曲线（每个模型一条）。"""
     d = df[
-        df["exp_id"].astype(str).str.match(r"^e3[a-d]?$")
+        df["exp_id"].astype(str).str.match(r"^e3[a-z0-9_]*$")
         & (df["split"] == "test")
         & (df["corruption"].isin(CORRUPTION_CN))
     ].copy()
@@ -228,10 +229,10 @@ def fig_e3_robustness(df: pd.DataFrame) -> None:
         print("[figure] 跳过 E3：results.csv 里还没有 E3 行")
         return
 
-    # 模型来源：优先按 notes 里的 "eval from e1x_"，否则用 exp_id 后缀（e3a→e1a）
-    src = d["notes"].astype(str).str.extract(r"eval from (e1[a-d])_")[0]
-    fallback = "e1" + d["exp_id"].astype(str).str.extract(r"^e3([a-d])$")[0]
-    d["src"] = src.fillna(fallback)
+    # 模型来源：从 notes 里的 "eval from e1x_" 或 "eval from e2c_" 提取
+    src = d["notes"].astype(str).str.extract(r"eval from (e[12][a-z0-9]+)_")[0]
+    fallback = d["exp_id"].astype(str).str.extract(r"^e3([a-z0-9]+)$")[0]
+    d["src"] = src.fillna(fallback).fillna("")
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.2), dpi=150, sharey=True)
     for ax, corr in zip(axes, CORRUPTION_CN):
