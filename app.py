@@ -49,6 +49,12 @@ def main() -> int:
     parser.add_argument("--model", default=None, help="默认从 ckpt 路径猜，猜不到用 config 的 model.name")
     parser.add_argument("--device", default=None)
     parser.add_argument("--port", type=int, default=7860)
+    parser.add_argument(
+        "--reject-threshold",
+        type=float,
+        default=0.6,
+        help="最高置信度低于该值时判为“不确定”，避免把非番茄图片硬判成病害",
+    )
     parser.add_argument("--share", action="store_true", help="生成公网临时链接（答辩演示用）")
     args = parser.parse_args()
 
@@ -89,6 +95,10 @@ def main() -> int:
         x = eval_tf(pil_image.convert("RGB")).unsqueeze(0).to(device)
         cam, probs = cam_engine.explain(x)
         rgb = denormalize(x[0], mean, std)
+        top1 = float(probs.max())
+        if top1 < args.reject_threshold:
+            note = f"不确定：不像六类番茄病害（最高置信度仅 {top1:.1%}）"
+            return {note: 1.0}, overlay_cam(rgb, cam)
         return topk_probs(probs, classes), overlay_cam(rgb, cam)
 
     demo = gr.Interface(
@@ -103,6 +113,7 @@ def main() -> int:
             f"模型 {model_name}（{count_parameters(model) / 1e6:.2f}M 参数）。"
             "预处理与评测一致：Resize(256) → CenterCrop(224) → Normalize；"
             "热力图高亮模型判病时真正关注的区域。"
+            f"仅支持番茄六类；最高置信度低于 {args.reject_threshold:.0%} 时判为“不确定”。"
         ),
     )
     # server_name 显式绑定回环地址：本机开着系统代理时，Gradio 启动自检不会走代理导致 502
