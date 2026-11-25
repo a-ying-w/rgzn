@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>数据集中心 · TomatoGuard</title>
+<meta name="description" content="PlantVillage 番茄六类数据集介绍、去重划分、类别分布与样本预览。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">DATASET CENTER</span>
+      <h1>数据集中心</h1>
+      <p class="lede">数据来自 PlantVillage 公开数据集中的番茄子集。为避免"同一片叶子多拍"导致测试集虚高，划分前先做 pHash 近重复聚类，再按组整体切分并冻结校验。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">PlantVillage · Tomato</span>
+        <span class="tag tag-neutral">6 类</span>
+        <span class="tag tag-neutral">70 / 15 / 15</span>
+        <span class="tag tag-ok">划分已冻结（SHA-256）</span>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="label">图片总数（color）</div><div class="value brand" id="dsImages">—</div><div class="sub">六类合计</div></div>
+      <div class="stat"><div class="label">近重复聚类组数</div><div class="value" id="dsGroups">—</div><div class="sub">合并 <span id="dsMerged">—</span> 张近重复图</div></div>
+      <div class="stat"><div class="label">训练 / 验证 / 测试</div><div class="value" style="font-size:20px" id="dsSplit">—</div><div class="sub">按组分层切分</div></div>
+      <div class="stat"><div class="label">segmented 版本</div><div class="value" id="dsSeg">—</div><div class="sub">去背景抠图，用于跨域实验</div></div>
+    </div>
+
+    <div class="compare-grid" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>类别分布</h3><span class="hint">color 版本</span></div>
+        <div class="chart-box" id="classChart" style="height:340px"></div>
+      </section>
+      <section class="card card-pad">
+        <div class="card-head"><h3>划分比例</h3><span class="hint">按近重复组整体切分</span></div>
+        <div class="split-bar">
+          <div class="train" id="barTrain">训练</div>
+          <div class="val" id="barVal">验证</div>
+          <div class="test" id="barTest">测试</div>
+        </div>
+        <p class="chart-note">同一 pHash 组只会落在同一个 split，避免同片叶子跨集泄漏。</p>
+        <div class="table-wrap" style="margin-top:14px">
+          <table class="data-table" style="min-width:0">
+            <tbody id="classTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head"><h3>数据构建流程</h3><span class="hint">scripts/build_splits.py</span></div>
+      <div class="flow">
+        <div class="flow-step"><b>1. 收集图片</b>六类番茄<br>color / segmented</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>2. pHash 去重</b>汉明距离 ≤ 8<br>合并近重复</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>3. 分组</b>同组不跨集<br>防止泄漏</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>4. 分层切分</b>70/15/15<br>固定 seed 42</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>5. 冻结校验</b>sha256<br>meta.json</div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="section-head">
+        <div><h2>样本预览</h2><p>每类 4 张测试集真实样本，未做增强。</p></div>
+        <a class="more" href="library.html">查看病害百科 →</a>
+      </div>
+      <div id="galleryWrap"></div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head"><h3>color 与 segmented</h3><span class="hint">跨域实验的两个域</span></div>
+      <div class="grid-2" style="align-items:center">
+        <div class="compare-images">
+          <figure><img id="dsColor" alt="color 样本"><figcaption>color · 带背景原图（训练域）</figcaption></figure>
+          <figure><img id="dsSegSample" alt="segmented 样本"><figcaption>segmented · 去背景抠图（测试域）</figcaption></figure>
+        </div>
+        <div>
+          <p style="font-size:14px;line-height:1.85;color:var(--text-2)">
+            segmented 版本把叶片从背景中抠出，保留病斑形态但去掉土壤、光照等背景信息。
+            主模型只在 color 上训练，直接用 segmented 测试会跌到 68.35%，说明背景线索对预测有实质贡献。
+          </p>
+          <a class="btn btn-ghost btn-sm" href="crossdomain.html" style="margin-top:16px">查看跨域实验 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <div class="card-head"><h3>数据来源与引用</h3></div>
+      <p style="font-size:14px;line-height:1.9;color:var(--text-2)">
+        PlantVillage 数据集由 Pennsylvania State University 与 EPFL 等机构发布，包含多种作物的健康与病害叶片图像。
+        本项目使用其中的番茄子集，共六类叶片状态。原始图片版权归数据集发布方所有，本项目仅用于课程研究与教学演示。
+      </p>
+      <div class="callout" style="margin-top:16px">
+        <strong>引用：</strong>Hughes, D. P., &amp; Salathé, M. (2015). An open access repository of images on plant health to enable the development of mobile disease diagnostics. arXiv:1511.08060.
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  TG.loadSiteData().then(function (d) {
+    var meta = d.meta || {};
+    var cn = meta.class_cn || {};
+    var perClass = meta.per_class || {};
+    var perSplit = meta.per_class_split || {};
+
+    $("dsImages").textContent = TG.num(meta.n_images);
+    $("dsGroups").textContent = TG.num(meta.n_groups);
+    $("dsMerged").textContent = TG.num((meta.dedupe || {}).n_merged);
+    $("dsSeg").textContent = TG.num(meta.n_segmented);
+
+    var s = meta.split_sizes || {};
+    if (s.train) {
+      $("dsSplit").textContent = TG.num(s.train) + " / " + TG.num(s.val) + " / " + TG.num(s.test);
+      var total = s.train + s.val + s.test;
+      $("barTrain").style.flex = s.train;
+      $("barVal").style.flex = s.val;
+      $("barTest").style.flex = s.test;
+      $("barTrain").textContent = "训练 " + (s.train / total * 100).toFixed(0) + "%";
+      $("barVal").textContent = "验证 " + (s.val / total * 100).toFixed(0) + "%";
+      $("barTest").textContent = "测试 " + (s.test / total * 100).toFixed(0) + "%";
+    }
+
+    var classes = d.class_order || Object.keys(perClass);
+    var labels = classes.map(function (c) { return cn[c] || c.split("___")[1]; });
+    var counts = classes.map(function (c) { return perClass[c] || 0; });
+
+    TG.chart($("classChart"), {
+      legend: { show: false },
+      grid: { left: 8, right: 40, top: 12, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return v + " 张"; } },
+      xAxis: { type: "value", splitLine: { lineStyle: { color: "#eef1ef" } } },
+      yAxis: { type: "category", inverse: true, data: labels, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { fontSize: 11.5 } },
+      series: [{
+        type: "bar", barWidth: 15, data: counts,
+        itemStyle: { color: "#67a879", borderRadius: [0, 4, 4, 0] },
+        label: { show: true, position: "right", fontSize: 11, color: "#4a564f" }
+      }]
+    });
+
+    $("classTable").innerHTML = classes.map(function (c) {
+      var total = perClass[c] || 0;
+      var tr = perSplit.train ? (perSplit.train[c] || 0) : 0;
+      var va = perSplit.val ? (perSplit.val[c] || 0) : 0;
+      var te = perSplit.test ? (perSplit.test[c] || 0) : 0;
+      return '<tr><td style="font-size:12.5px">' + TG.escape(cn[c] || c) + '</td>' +
+        '<td class="num" style="font-size:12px">' + TG.num(total) + '</td>' +
+        '<td class="num" style="font-size:12px;color:var(--muted)">' + TG.num(tr) + ' / ' + TG.num(va) + ' / ' + TG.num(te) + '</td></tr>';
+    }).join("");
+
+    /* 样本墙 */
+    var gallery = (d.images && d.images.gallery) || {};
+    $("galleryWrap").innerHTML = classes.map(function (c) {
+      var disease = (d.diseases || []).filter(function (x) { return x.cls === c; })[0];
+      if (!disease) return "";
+      var imgs = gallery[disease.id] || [];
+      return '<div style="margin-bottom:18px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+        '<b style="font-size:14px">' + TG.escape(disease.cn) + '</b>' +
+        '<a class="muted" style="font-size:12.5px" href="disease.html?id=' + disease.id + '">查看详情 →</a></div>' +
+        '<div class="gallery">' + imgs.map(function (src, i) {
+          return '<figure><img src="' + src + '" alt="' + TG.escape(disease.cn) + ' 样本 ' + (i + 1) + '" loading="lazy" data-zoom="' + src + '"><figcaption>' + TG.escape(disease.en) + ' #' + (i + 1) + '</figcaption></figure>';
+        }).join("") + '</div></div>';
+    }).join("");
+
+    $("galleryWrap").querySelectorAll("[data-zoom]").forEach(function (img) {
+      img.style.cursor = "zoom-in";
+      img.addEventListener("click", function () { TG.openLightbox(img.getAttribute("data-zoom"), img.alt); });
+    });
+
+    var cd = d.images && d.images.crossdomain ? d.images.crossdomain : {};
+    if (cd.color) $("dsColor").src = cd.color;
+    if (cd.segmented) $("dsSegSample").src = cd.segmented;
+  }).catch(function () { TG.toast("数据集信息加载失败", "error"); });
+})();
+</script>
+</body>
+</html>

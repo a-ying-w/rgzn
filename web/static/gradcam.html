@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Grad-CAM 分析 · TomatoGuard</title>
+<meta name="description" content="用 Grad-CAM 观察模型判病时真正关注的叶片区域，支持示例与自定义上传。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">EXPLAINABLE AI</span>
+      <h1>Grad-CAM 可解释性分析</h1>
+      <p class="lede">模型给出一个类别并不代表它看对了地方。Grad-CAM 把最后一个卷积层的梯度加权回特征图，标出对当前预测贡献最大的区域——红色越深，模型越"在意"。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">目标层：layer4 最后残差块</span>
+        <span class="tag tag-neutral">与 app.py 实现一致</span>
+        <span class="tag tag-neutral">支持自定义上传</span>
+      </div>
+    </div>
+
+    <div class="compare-grid" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>选择样本</h3><span class="hint">六类各一张</span></div>
+        <div class="grid-3" id="sampleGrid" style="gap:10px"></div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <label class="btn btn-ghost" style="flex:1;cursor:pointer">
+            <span data-icon="upload" data-size="16"></span>上传自己的图片
+            <input type="file" id="camInput" accept="image/jpeg,image/png" style="display:none">
+          </label>
+          <button class="btn btn-primary" id="runCam" disabled><span data-icon="scan" data-size="17"></span>生成 Grad-CAM</button>
+        </div>
+        <p class="chart-note">示例图片来自 test split，真实类别已知，可用于检查热力图是否落在病斑上。</p>
+      </section>
+
+      <section class="card card-pad">
+        <div class="card-head"><h3>预测与解释</h3><span class="hint" id="camHint">等待选择</span></div>
+        <div class="result-main" id="camResult" style="margin-bottom:14px">
+          <div class="caption">当前预测</div>
+          <div class="name" id="camName">—</div>
+          <div class="conf"><b id="camProb">—</b><span class="muted" style="font-size:13px">置信度</span></div>
+        </div>
+        <dl class="kv">
+          <dt>真实类别</dt><dd id="camTrue">—</dd>
+          <dt>判断</dt><dd id="camVerdict">—</dd>
+          <dt>推理耗时</dt><dd id="camMs">—</dd>
+        </dl>
+        <p class="chart-note" id="camInterpret">选择一张示例或上传图片后生成热力图。观察红色高亮是否覆盖病斑、叶缘或背景，可判断模型是否学到了正确的证据。</p>
+      </section>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head"><h3>三视图对比</h3><span class="hint">原始 / 热力图 / 叠加</span></div>
+      <div class="cam-grid">
+        <div class="cam-panel">
+          <div class="head"><span>原始图片</span><button class="icon-btn" data-zoom="original" title="放大"><span data-icon="expand"></span></button></div>
+          <div class="stage is-empty"><span class="stage-empty">选择示例或上传图片后显示</span><img id="camOriginal" alt="原始图片"></div>
+        </div>
+        <div class="cam-panel">
+          <div class="head"><span>Grad-CAM 热力图</span><button class="icon-btn" data-zoom="heatmap" title="放大"><span data-icon="expand"></span></button></div>
+          <div class="stage is-empty"><span class="stage-empty">生成后显示热力图</span><img id="camHeat" alt="Grad-CAM 热力图"></div>
+        </div>
+        <div class="cam-panel">
+          <div class="head"><span>热力图叠加</span><button class="icon-btn" data-zoom="overlay" title="放大"><span data-icon="expand"></span></button></div>
+          <div class="stage is-empty"><span class="stage-empty">生成后显示叠加图</span><img id="camOverlay" alt="热力图叠加"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head"><h3>Grad-CAM 是怎么算的</h3><span class="hint">四步</span></div>
+      <div class="flow">
+        <div class="flow-step"><b>1. 前向传播</b>得到 logits 与预测类别</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>2. 反向传播</b>对目标类别求梯度</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>3. 通道加权</b>梯度全局平均作权重</div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="flow-step"><b>4. 上采样</b>ReLU 后插值回 224×224</div>
+      </div>
+      <p class="chart-note">实现位于 src/models/gradcam.py，使用 forward hook 取特征图、tensor hook 取梯度，不依赖第三方 CAM 库。热力图只反映模型关注位置，不代表病理学上的因果解释。</p>
+    </section>
+
+    <section class="callout warn">
+      <strong>如何读热力图：</strong>理想情况下高亮应集中在病斑、坏死边缘等真实病变处；如果高亮落在背景、叶柄或图片边角，说明模型可能利用了数据集偏差。E4a 跨域实验的精度下跌，与这类"背景捷径"相互印证。
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var current = null; // { src, trueId, trueName }
+  var last = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  TG.loadSiteData().then(function (d) {
+    var imgs = (d.images && d.images.diseases) || {};
+    var diseases = d.diseases || [];
+    el("sampleGrid").innerHTML = diseases.map(function (x) {
+      var src = imgs[x.id] || "assets/img/diseases/" + x.id + "-1.jpg";
+      return '<button class="cam-sample" data-id="' + x.id + '" data-src="' + src + '" data-name="' + TG.escape(x.cn) + '" ' +
+        'style="border:2px solid transparent;border-radius:9px;overflow:hidden;background:#eef2ef;padding:0;cursor:pointer;position:relative" title="' + TG.escape(x.cn) + '">' +
+        '<img src="' + src + '" alt="' + TG.escape(x.cn) + '" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block">' +
+        '<span style="position:absolute;left:0;right:0;bottom:0;padding:3px 5px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(16,23,19,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+        TG.escape(x.cn) + '</span></button>';
+    }).join("");
+
+    el("sampleGrid").querySelectorAll(".cam-sample").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        el("sampleGrid").querySelectorAll(".cam-sample").forEach(function (b) { b.style.borderColor = "transparent"; });
+        btn.style.borderColor = "var(--brand)";
+        current = {
+          src: btn.getAttribute("data-src"),
+          trueId: btn.getAttribute("data-id"),
+          trueName: btn.getAttribute("data-name")
+        };
+        el("runCam").disabled = false;
+        el("camHint").textContent = "已选择：" + current.trueName;
+        el("camTrue").textContent = current.trueName;
+        el("camVerdict").textContent = "等待生成";
+        loadPreview(current.src);
+      });
+    });
+  }).catch(function () {});
+
+  function setStage(img, src) {
+    var stage = img.parentNode;
+    if (src) {
+      img.src = src;
+      stage.classList.remove("is-empty");
+    } else {
+      img.removeAttribute("src");
+      stage.classList.add("is-empty");
+    }
+  }
+
+  function loadPreview(src) {
+    setStage(el("camOriginal"), src);
+    setStage(el("camHeat"), null);
+    setStage(el("camOverlay"), null);
+    el("camName").textContent = "—";
+    el("camProb").textContent = "—";
+    el("camMs").textContent = "—";
+    el("camInterpret").textContent = "点击「生成 Grad-CAM」后，这里会显示模型关注区域的分析提示。";
+  }
+
+  el("camInput").addEventListener("change", function () {
+    var file = this.files[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png)$/i.test(file.type)) { TG.toast("仅支持 JPG / PNG", "warn"); return; }
+    current = { file: file, src: URL.createObjectURL(file), trueId: null, trueName: "自定义上传" };
+    el("sampleGrid").querySelectorAll(".cam-sample").forEach(function (b) { b.style.borderColor = "transparent"; });
+    el("runCam").disabled = false;
+    el("camHint").textContent = "已上传：" + file.name;
+    el("camTrue").textContent = "未知（自定义上传）";
+    el("camVerdict").textContent = "等待生成";
+    loadPreview(current.src);
+    this.value = "";
+  });
+
+  function toBlob(src) {
+    if (current.file) return Promise.resolve(current.file);
+    return fetch(src).then(function (r) { return r.blob(); }).then(function (b) { return new File([b], "sample.jpg", { type: b.type || "image/jpeg" }); });
+  }
+
+  el("runCam").addEventListener("click", function () {
+    if (!current) return;
+    var btn = this;
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+    el("camHint").textContent = "生成中…";
+
+    toBlob(current.src).then(function (file) {
+      var fd = new FormData();
+      fd.append("file", file, file.name || "image.jpg");
+      return fetch("api/predict", { method: "POST", body: fd }).then(function (r) { return r.json(); });
+    }).then(function (res) {
+      if (res.detail) throw new Error(res.detail);
+      last = res;
+      setStage(el("camOriginal"), res.images.original);
+      setStage(el("camHeat"), res.images.heatmap);
+      setStage(el("camOverlay"), res.images.overlay);
+      el("camName").textContent = res.uncertain ? "不确定（非六类番茄叶片）" : res.top1.cn;
+      el("camProb").textContent = (res.top1.prob * 100).toFixed(1) + "%";
+      el("camMs").textContent = res.inference_ms + " ms";
+      el("camHint").textContent = "已生成 · " + res.model;
+
+      if (current.trueId) {
+        var ok = res.top1.disease_id === current.trueId && !res.uncertain;
+        el("camVerdict").innerHTML = ok
+          ? '<span class="tag tag-ok">判断正确</span>'
+          : '<span class="tag tag-danger">判断错误</span>';
+      } else {
+        el("camVerdict").textContent = res.uncertain ? "低置信度" : "无法核对真实类别";
+      }
+
+      el("camInterpret").textContent = res.uncertain
+        ? "置信度偏低，模型对输入缺乏把握。此时热力图的位置参考意义有限，建议换一张叶片主体清晰的照片。"
+        : "红色区域是模型判为「" + res.top1.cn + "」时权重最高的位置。请对照原始图片，检查高亮是否落在病斑、坏死或叶缘等真实病变处；若高亮集中在背景或边角，说明模型可能依赖了数据集偏差。";
+      TG.toast("Grad-CAM 已生成", "ok");
+    }).catch(function (err) {
+      TG.toast(err.message || "生成失败，请确认推理服务已启动", "error");
+      el("camHint").textContent = "生成失败";
+    }).finally(function () {
+      btn.classList.remove("is-loading");
+      btn.disabled = false;
+    });
+  });
+
+  document.querySelectorAll("[data-zoom]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.getAttribute("data-zoom");
+      if (last && last.images[key]) TG.openLightbox(last.images[key], key);
+      else TG.toast("请先生成热力图", "warn");
+    });
+  });
+})();
+</script>
+</body>
+</html>

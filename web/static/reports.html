@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>实验报告 · TomatoGuard</title>
+<meta name="description" content="TomatoGuard 实验报告总览：迁移学习、数据增强、鲁棒性、跨域与 Grad-CAM 的结论与复现方式。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">EXPERIMENT REPORTS</span>
+      <h1>实验报告</h1>
+      <p class="lede">六份实验结论，对应五个研究问题。所有数字都可在 results.csv 与 runs/*/metrics.json 中逐条核对，图表由 scripts/make_figures.py 统一生成。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">6 份实验</span>
+        <span class="tag tag-neutral">统一评测协议</span>
+        <span class="tag tag-neutral">结果可复现</span>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="label">最关键的提升</div><div class="value brand">+1.42 <small>pp</small></div><div class="sub">迁移学习 vs 从零训练</div></div>
+      <div class="stat"><div class="label">最严重的退化</div><div class="value accent" id="worstDrop">—</div><div class="sub">亮度 5 级 · 从零模型</div></div>
+      <div class="stat"><div class="label">跨域跌幅</div><div class="value" id="crossDrop">—</div><div class="sub">color → segmented</div></div>
+      <div class="stat"><div class="label">完整报告</div><div class="value" style="font-size:18px"><a href="assets/docs/full_report.docx" download style="color:var(--brand)">下载 Word ↓</a></div><div class="sub">含方法、结果与讨论</div></div>
+    </div>
+
+    <div class="report-grid" style="margin-bottom:26px">
+      <article class="report-card">
+        <div class="top"><h3>E1 · 迁移学习有效性</h3><span class="tag tag-brand">核心</span></div>
+        <p>比较 ResNet-18 从零训练、ImageNet 微调、自建 CNN 与 MobileNetV3，回答预训练到底带来多少收益。</p>
+        <div class="result">ResNet-18 从零 <b>98.15%</b> → 微调 <b>99.57%</b>（+1.42 pp）；E0 冻结主干仅 <b>90.09%</b>。</div>
+        <a class="more" href="compare.html" style="font-size:13px;color:var(--brand)">查看对比 →</a>
+      </article>
+
+      <article class="report-card">
+        <div class="top"><h3>E2 · 数据增强消融</h3><span class="tag tag-neutral">消融</span></div>
+        <p>无增强、基础增强、强增强三档，各含从零与微调两臂，检验增强在小数据集上的边际收益。</p>
+        <div class="result">从零：无增强 <b>96.58%</b>、基础 <b>98.15%</b>、强增强 <b>96.44%</b>；强增强并未带来额外收益。</div>
+        <a class="more" href="reports.html#aug" style="font-size:13px;color:var(--brand)">查看图表 →</a>
+      </article>
+
+      <article class="report-card">
+        <div class="top"><h3>E3 · 鲁棒性实验</h3><span class="tag tag-warn">关键</span></div>
+        <p>亮度、旋转、模糊三类各五级扰动，量化实验室精度与真实拍摄条件之间的差距。</p>
+        <div class="result">亮度 5 级：迁移 <b>93.44%</b> vs 从零 <b>17.53%</b>；模糊 5 级两者仅 <b>44.55% / 57.45%</b>。</div>
+        <a class="more" href="robustness.html" style="font-size:13px;color:var(--brand)">查看曲线 →</a>
+      </article>
+
+      <article class="report-card">
+        <div class="top"><h3>E4 · 跨域实验</h3><span class="tag tag-warn">关键</span></div>
+        <p>训练用 color、测试换 segmented，检验模型是否依赖背景颜色；并用域内重训作为上界参照。</p>
+        <div class="result">同域 <b>99.57%</b> → 跨域零样本 <b>68.35%</b>（−31.22 pp）；域内重训可回到 <b>99.57%</b>。</div>
+        <a class="more" href="crossdomain.html" style="font-size:13px;color:var(--brand)">查看实验 →</a>
+      </article>
+
+      <article class="report-card">
+        <div class="top"><h3>E5 · 可解释性分析</h3><span class="tag tag-neutral">分析</span></div>
+        <p>用 Grad-CAM 观察模型关注区域，判断它是否落在真实病斑上，与跨域实验的背景依赖相互印证。</p>
+        <div class="result">热力图可直接对照原始叶片检查；实现位于 <b>src/models/gradcam.py</b>，不依赖第三方 CAM 库。</div>
+        <a class="more" href="gradcam.html" style="font-size:13px;color:var(--brand)">生成热力图 →</a>
+      </article>
+
+      <article class="report-card">
+        <div class="top"><h3>总报告 · 方法与讨论</h3><span class="tag tag-accent">文档</span></div>
+        <p>包含研究背景、数据构建、实验设计、完整结果表、讨论与局限，以及可复现步骤。</p>
+        <div class="result">Word 版本：<b>report/full_report.docx</b>；图表：<b>report/figures/</b>。</div>
+        <a class="more" href="assets/docs/full_report.docx" download style="font-size:13px;color:var(--brand)">下载完整报告 ↓</a>
+      </article>
+    </div>
+
+    <section class="card card-pad" id="aug" style="margin-bottom:26px">
+      <div class="card-head"><h3>数据增强消融：测试集准确率</h3><span class="hint">同一划分、同一评测</span></div>
+      <div class="chart-box" id="augChart" style="height:340px"></div>
+      <p class="chart-note">从零训练对增强更敏感（+1.57 pp），但强增强反而略低于基础增强；预训练模型对增强不敏感（−0.28 ~ −0.50 pp）。说明在数据量有限时，增强并非越多越好。</p>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="section-head">
+        <div><h2>实验图表</h2><p>点击图片可放大；全部由 scripts/make_figures.py 生成。</p></div>
+      </div>
+      <div class="grid-3" id="figureGrid"></div>
+    </section>
+
+    <section class="card card-pad">
+      <div class="card-head"><h3>如何复现</h3><span class="hint">命令来自 README</span></div>
+      <div class="grid-2">
+        <div>
+          <p class="muted" style="font-size:12.5px;margin-bottom:8px">1. 构建前端数据（只读汇总）</p>
+          <pre class="mono" style="background:#101713;color:#d8e6de;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12.5px;margin:0">python scripts/build_web_data.py</pre>
+          <p class="muted" style="font-size:12.5px;margin:14px 0 8px">2. 启动推理与站点</p>
+          <pre class="mono" style="background:#101713;color:#d8e6de;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12.5px;margin:0">python web/server.py</pre>
+        </div>
+        <div>
+          <p class="muted" style="font-size:12.5px;margin-bottom:8px">3. 重新训练主模型（可选）</p>
+          <pre class="mono" style="background:#101713;color:#d8e6de;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12.5px;margin:0">python -m src.train --config configs/e1_resnet18_ft.yaml --seed 42</pre>
+          <p class="muted" style="font-size:12.5px;margin:14px 0 8px">4. 重新生成图表（可选）</p>
+          <pre class="mono" style="background:#101713;color:#d8e6de;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12.5px;margin:0">python scripts/make_figures.py</pre>
+        </div>
+      </div>
+      <p class="chart-note">训练与评测只读写 runs/ 与 results/，前端展示只读这些产物，两者互不影响。</p>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var FIG_LABELS = {
+    class_distribution: "类别分布",
+    e2_aug_ablation: "数据增强消融",
+    e3_robustness_curves: "鲁棒性曲线",
+    e4_cross_domain: "跨域实验对比",
+    e4a_confusion_matrix: "跨域混淆矩阵",
+    gradcam_mobilenet_v3_small_blur_s4: "Grad-CAM · 模糊扰动",
+    gradcam_mobilenet_v3_small_clean: "Grad-CAM · 原始图片"
+  };
+
+  TG.loadSiteData().then(function (d) {
+    var aug = d.aug_ablation || {};
+    var scratch = aug.scratch || {};
+    var pre = aug.pretrained || {};
+    var cats = ["无增强", "基础增强", "强增强"];
+    var sVals = ["none", "basic", "strong"].map(function (k) { return scratch[k] ? scratch[k].acc : null; });
+    var pVals = ["none", "basic", "strong"].map(function (k) { return pre[k] ? pre[k].acc : null; });
+
+    TG.chart(document.getElementById("augChart"), {
+      legend: { data: ["从零训练", "迁移学习"], top: 0 },
+      grid: { left: 8, right: 20, top: 42, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: { type: "category", data: cats, axisTick: { show: false }, axisLine: { lineStyle: { color: "#d7ded9" } } },
+      yAxis: { type: "value", min: 0.95, max: 1, axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; } }, splitLine: { lineStyle: { color: "#eef1ef" } } },
+      series: [
+        { name: "从零训练", type: "bar", barMaxWidth: 34, data: sVals, itemStyle: { color: "#a9c9b6", borderRadius: [5, 5, 0, 0] },
+          label: { show: true, position: "top", fontSize: 11, formatter: function (p) { return (p.value * 100).toFixed(2) + "%"; } } },
+        { name: "迁移学习", type: "bar", barMaxWidth: 34, data: pVals, itemStyle: { color: "#237a57", borderRadius: [5, 5, 0, 0] },
+          label: { show: true, position: "top", fontSize: 11, formatter: function (p) { return (p.value * 100).toFixed(2) + "%"; } } }
+      ]
+    });
+
+    /* 关键数据 */
+    var bri = d.robustness && d.robustness.e3a ? d.robustness.e3a.series.brightness : null;
+    if (bri) {
+      var last = bri[bri.length - 1];
+      var clean = (d.models.filter(function (m) { return m.exp_id === "e1a"; })[0] || {}).acc || 0.9815;
+      document.getElementById("worstDrop").textContent = "−" + ((clean - last[1]) * 100).toFixed(2) + " pp";
+    }
+    if (d.crossdomain && d.crossdomain.drop !== null && d.crossdomain.drop !== undefined) {
+      document.getElementById("crossDrop").textContent = "−" + (d.crossdomain.drop * 100).toFixed(2) + " pp";
+    }
+
+    /* 图表墙 */
+    var grid = document.getElementById("figureGrid");
+    grid.innerHTML = (d.figures || []).map(function (f) {
+      return '<figure class="card" style="margin:0;overflow:hidden;cursor:zoom-in" data-zoom="' + f.src + '">' +
+        '<img src="' + f.src + '" alt="' + (FIG_LABELS[f.name] || f.name) + '" style="width:100%;aspect-ratio:16/10;object-fit:contain;padding:10px;background:var(--surface-2)">' +
+        '<figcaption style="padding:10px 14px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)">' + (FIG_LABELS[f.name] || f.name) + '</figcaption></figure>';
+    }).join("");
+    grid.querySelectorAll("[data-zoom]").forEach(function (fig) {
+      fig.addEventListener("click", function () {
+        var img = fig.querySelector("img");
+        TG.openLightbox(fig.getAttribute("data-zoom"), img ? img.alt : "");
+      });
+    });
+  }).catch(function () { TG.toast("报告数据加载失败", "error"); });
+})();
+</script>
+</body>
+</html>

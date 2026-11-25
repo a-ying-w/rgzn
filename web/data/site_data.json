@@ -1,0 +1,1388 @@
+{
+  "generated_at": "2026-11-24T10:37:44",
+  "meta": {
+    "created_at": "2026-11-09T19:49:28+08:00",
+    "classes": [
+      "Tomato___Bacterial_spot",
+      "Tomato___Early_blight",
+      "Tomato___Late_blight",
+      "Tomato___Leaf_Mold",
+      "Tomato___Septoria_leaf_spot",
+      "Tomato___healthy"
+    ],
+    "n_images": 9350,
+    "n_groups": 8847,
+    "split_sizes": {
+      "train": 6544,
+      "val": 1403,
+      "test": 1403
+    },
+    "per_class": {
+      "Tomato___Bacterial_spot": 2127,
+      "Tomato___Early_blight": 1000,
+      "Tomato___Late_blight": 1909,
+      "Tomato___Leaf_Mold": 952,
+      "Tomato___Septoria_leaf_spot": 1771,
+      "Tomato___healthy": 1591
+    },
+    "root": "data/raw/plantvillage/raw/color",
+    "seed": 42,
+    "frozen": true,
+    "sha256": {
+      "train": "80d3b917c6d66fb3bd1557d9aa1deb5575b445bddfa2e46e5c753bcf432f68ce",
+      "val": "72b4ffa43499cadf6c805dadede3d4c473a09643e68d2e30730cdfd61bfc8a3c",
+      "test": "40987abfd5218493af594e935015003a37fddd1568db072ff578b0e3ee277609"
+    },
+    "dedupe": {
+      "dedupe": true,
+      "max_dist": 8,
+      "n_images": 9350,
+      "n_groups": 8847,
+      "n_merged": 503
+    },
+    "val_ratio": 0.15,
+    "test_ratio": 0.15,
+    "class_cn": {
+      "Tomato___Bacterial_spot": "番茄细菌性斑点病",
+      "Tomato___Early_blight": "番茄早疫病",
+      "Tomato___Late_blight": "番茄晚疫病",
+      "Tomato___Leaf_Mold": "番茄叶霉病",
+      "Tomato___Septoria_leaf_spot": "番茄斑枯病",
+      "Tomato___healthy": "番茄健康叶片"
+    },
+    "class_en": {
+      "Tomato___Bacterial_spot": "Bacterial Spot",
+      "Tomato___Early_blight": "Early Blight",
+      "Tomato___Late_blight": "Late Blight",
+      "Tomato___Leaf_Mold": "Leaf Mold",
+      "Tomato___Septoria_leaf_spot": "Septoria Leaf Spot",
+      "Tomato___healthy": "Healthy"
+    },
+    "n_color": 18698,
+    "n_segmented": 18700,
+    "per_class_split": {
+      "train": {
+        "Tomato___Bacterial_spot": 1489,
+        "Tomato___Early_blight": 700,
+        "Tomato___Late_blight": 1337,
+        "Tomato___Leaf_Mold": 666,
+        "Tomato___Septoria_leaf_spot": 1239,
+        "Tomato___healthy": 1113
+      },
+      "val": {
+        "Tomato___Bacterial_spot": 319,
+        "Tomato___Early_blight": 150,
+        "Tomato___Late_blight": 286,
+        "Tomato___Leaf_Mold": 143,
+        "Tomato___Septoria_leaf_spot": 266,
+        "Tomato___healthy": 239
+      },
+      "test": {
+        "Tomato___Bacterial_spot": 319,
+        "Tomato___Early_blight": 150,
+        "Tomato___Late_blight": 286,
+        "Tomato___Leaf_Mold": 143,
+        "Tomato___Septoria_leaf_spot": 266,
+        "Tomato___healthy": 239
+      }
+    }
+  },
+  "models": [
+    {
+      "exp_id": "e0",
+      "model": "resnet18",
+      "name": "ResNet-18",
+      "en": "ResNet-18",
+      "pretrained": true,
+      "acc": 0.9009,
+      "macro_f1": 0.8907,
+      "params_m": 11.18,
+      "note": "冻结主干，仅训练分类头",
+      "variant": "color"
+    },
+    {
+      "exp_id": "e1a",
+      "model": "resnet18",
+      "name": "ResNet-18",
+      "en": "ResNet-18",
+      "pretrained": false,
+      "acc": 0.9815,
+      "macro_f1": 0.9807,
+      "params_m": 11.18,
+      "note": "从零训练，不使用预训练权重",
+      "variant": "color",
+      "per_class_precision": {
+        "Tomato___Bacterial_spot": 0.99361,
+        "Tomato___Early_blight": 0.960265,
+        "Tomato___Late_blight": 0.975694,
+        "Tomato___Leaf_Mold": 0.986014,
+        "Tomato___Septoria_leaf_spot": 0.97037,
+        "Tomato___healthy": 0.995798
+      },
+      "per_class_recall": {
+        "Tomato___Bacterial_spot": 0.974922,
+        "Tomato___Early_blight": 0.966667,
+        "Tomato___Late_blight": 0.982517,
+        "Tomato___Leaf_Mold": 0.986014,
+        "Tomato___Septoria_leaf_spot": 0.984962,
+        "Tomato___healthy": 0.991632
+      },
+      "confusion_matrix": [
+        [
+          311,
+          1,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          0,
+          145,
+          5,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          281,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          141,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          2,
+          1,
+          262,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          237
+        ]
+      ]
+    },
+    {
+      "exp_id": "e1b",
+      "model": "resnet18",
+      "name": "ResNet-18",
+      "en": "ResNet-18",
+      "pretrained": true,
+      "acc": 0.9957,
+      "macro_f1": 0.9953,
+      "params_m": 11.18,
+      "note": "ImageNet 预训练后整体微调（主模型）",
+      "variant": "color",
+      "per_class_precision": {
+        "Tomato___Bacterial_spot": 1.0,
+        "Tomato___Early_blight": 0.9867549668874173,
+        "Tomato___Late_blight": 0.993006993006993,
+        "Tomato___Leaf_Mold": 1.0,
+        "Tomato___Septoria_leaf_spot": 0.9962546816479401,
+        "Tomato___healthy": 0.99581589958159
+      },
+      "per_class_recall": {
+        "Tomato___Bacterial_spot": 0.9968652037617555,
+        "Tomato___Early_blight": 0.9933333333333333,
+        "Tomato___Late_blight": 0.993006993006993,
+        "Tomato___Leaf_Mold": 0.993006993006993,
+        "Tomato___Septoria_leaf_spot": 1.0,
+        "Tomato___healthy": 0.99581589958159
+      },
+      "confusion_matrix": [
+        [
+          318,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          149,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          284,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          142,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          266,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          238
+        ]
+      ]
+    },
+    {
+      "exp_id": "e1c",
+      "model": "cnn",
+      "name": "自建 CNN",
+      "en": "Small CNN",
+      "pretrained": false,
+      "acc": 0.9758,
+      "macro_f1": 0.9745,
+      "params_m": 1.17,
+      "note": "轻量自建网络，从零训练",
+      "variant": "color",
+      "per_class_precision": {
+        "Tomato___Bacterial_spot": 0.990415,
+        "Tomato___Early_blight": 0.954248,
+        "Tomato___Late_blight": 0.975265,
+        "Tomato___Leaf_Mold": 0.965278,
+        "Tomato___Septoria_leaf_spot": 0.9631,
+        "Tomato___healthy": 0.991632
+      },
+      "per_class_recall": {
+        "Tomato___Bacterial_spot": 0.971787,
+        "Tomato___Early_blight": 0.973333,
+        "Tomato___Late_blight": 0.965035,
+        "Tomato___Leaf_Mold": 0.972028,
+        "Tomato___Septoria_leaf_spot": 0.981203,
+        "Tomato___healthy": 0.991632
+      },
+      "confusion_matrix": [
+        [
+          310,
+          1,
+          0,
+          0,
+          8,
+          0
+        ],
+        [
+          1,
+          146,
+          1,
+          0,
+          2,
+          0
+        ],
+        [
+          1,
+          5,
+          276,
+          2,
+          0,
+          2
+        ],
+        [
+          0,
+          1,
+          3,
+          139,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          3,
+          2,
+          261,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          237
+        ]
+      ]
+    },
+    {
+      "exp_id": "e1d",
+      "model": "resnet18",
+      "name": "ResNet-18",
+      "en": "ResNet-18",
+      "pretrained": true,
+      "acc": 0.995,
+      "macro_f1": 0.995,
+      "params_m": 11.18,
+      "note": "预训练微调 + 类别加权损失",
+      "variant": "color",
+      "per_class_precision": {
+        "Tomato___Bacterial_spot": 1.0,
+        "Tomato___Early_blight": 0.986755,
+        "Tomato___Late_blight": 0.989547,
+        "Tomato___Leaf_Mold": 1.0,
+        "Tomato___Septoria_leaf_spot": 0.996241,
+        "Tomato___healthy": 0.995816
+      },
+      "per_class_recall": {
+        "Tomato___Bacterial_spot": 0.99373,
+        "Tomato___Early_blight": 0.993333,
+        "Tomato___Late_blight": 0.993007,
+        "Tomato___Leaf_Mold": 1.0,
+        "Tomato___Septoria_leaf_spot": 0.996241,
+        "Tomato___healthy": 0.995816
+      },
+      "confusion_matrix": [
+        [
+          317,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          149,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          284,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          143,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          265,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          238
+        ]
+      ]
+    },
+    {
+      "exp_id": "e1e",
+      "model": "mobilenet_v3_small",
+      "name": "MobileNetV3-Small",
+      "en": "MobileNetV3-Small",
+      "pretrained": true,
+      "acc": 0.9957,
+      "macro_f1": 0.9958,
+      "params_m": 1.52,
+      "note": "轻量预训练模型，整体微调",
+      "variant": "color"
+    }
+  ],
+  "robustness": {
+    "e3a": {
+      "label": "ResNet-18 从零训练",
+      "short": "ResNet-18 Scratch",
+      "model": "resnet18",
+      "pretrained": false,
+      "series": {
+        "brightness": [
+          [
+            1,
+            0.9822,
+            0.9815
+          ],
+          [
+            2,
+            0.9736,
+            0.9722
+          ],
+          [
+            3,
+            0.913,
+            0.9087
+          ],
+          [
+            4,
+            0.4947,
+            0.4532
+          ],
+          [
+            5,
+            0.1753,
+            0.0997
+          ]
+        ],
+        "rotation": [
+          [
+            1,
+            0.9572,
+            0.9525
+          ],
+          [
+            2,
+            0.9522,
+            0.9469
+          ],
+          [
+            3,
+            0.9458,
+            0.9392
+          ],
+          [
+            4,
+            0.9344,
+            0.9278
+          ],
+          [
+            5,
+            0.9316,
+            0.9243
+          ]
+        ],
+        "blur": [
+          [
+            1,
+            0.881,
+            0.8658
+          ],
+          [
+            2,
+            0.6892,
+            0.6491
+          ],
+          [
+            3,
+            0.6379,
+            0.6003
+          ],
+          [
+            4,
+            0.6037,
+            0.5876
+          ],
+          [
+            5,
+            0.5745,
+            0.5545
+          ]
+        ]
+      }
+    },
+    "e3b": {
+      "label": "ResNet-18 迁移学习",
+      "short": "ResNet-18 Transfer",
+      "model": "resnet18",
+      "pretrained": true,
+      "series": {
+        "brightness": [
+          [
+            1,
+            0.9964,
+            0.9956
+          ],
+          [
+            2,
+            0.9957,
+            0.9951
+          ],
+          [
+            3,
+            0.9943,
+            0.9934
+          ],
+          [
+            4,
+            0.9857,
+            0.9846
+          ],
+          [
+            5,
+            0.9344,
+            0.934
+          ]
+        ],
+        "rotation": [
+          [
+            1,
+            0.9929,
+            0.9915
+          ],
+          [
+            2,
+            0.9893,
+            0.9881
+          ],
+          [
+            3,
+            0.9836,
+            0.982
+          ],
+          [
+            4,
+            0.9615,
+            0.9607
+          ],
+          [
+            5,
+            0.9579,
+            0.9582
+          ]
+        ],
+        "blur": [
+          [
+            1,
+            0.9879,
+            0.9868
+          ],
+          [
+            2,
+            0.9629,
+            0.9596
+          ],
+          [
+            3,
+            0.8468,
+            0.8324
+          ],
+          [
+            4,
+            0.618,
+            0.5611
+          ],
+          [
+            5,
+            0.4455,
+            0.3733
+          ]
+        ]
+      }
+    },
+    "e3c": {
+      "label": "自建 CNN 从零训练",
+      "short": "Small CNN",
+      "model": "cnn",
+      "pretrained": false,
+      "series": {
+        "brightness": [
+          [
+            1,
+            0.9772,
+            0.9753
+          ],
+          [
+            2,
+            0.9565,
+            0.9532
+          ],
+          [
+            3,
+            0.856,
+            0.833
+          ],
+          [
+            4,
+            0.4455,
+            0.3466
+          ],
+          [
+            5,
+            0.1839,
+            0.0793
+          ]
+        ],
+        "rotation": [
+          [
+            1,
+            0.9494,
+            0.945
+          ],
+          [
+            2,
+            0.943,
+            0.9379
+          ],
+          [
+            3,
+            0.9351,
+            0.9294
+          ],
+          [
+            4,
+            0.9187,
+            0.9145
+          ],
+          [
+            5,
+            0.9138,
+            0.909
+          ]
+        ],
+        "blur": [
+          [
+            1,
+            0.8617,
+            0.8477
+          ],
+          [
+            2,
+            0.5624,
+            0.5354
+          ],
+          [
+            3,
+            0.4562,
+            0.4401
+          ],
+          [
+            4,
+            0.4298,
+            0.397
+          ],
+          [
+            5,
+            0.4227,
+            0.3792
+          ]
+        ]
+      }
+    },
+    "e3d": {
+      "label": "ResNet-18 类别加权",
+      "short": "ResNet-18 Class-Weighted",
+      "model": "resnet18",
+      "pretrained": true,
+      "series": {
+        "brightness": [
+          [
+            1,
+            0.995,
+            0.9948
+          ],
+          [
+            2,
+            0.9943,
+            0.9939
+          ],
+          [
+            3,
+            0.9929,
+            0.9925
+          ],
+          [
+            4,
+            0.985,
+            0.9853
+          ],
+          [
+            5,
+            0.9351,
+            0.9377
+          ]
+        ],
+        "rotation": [
+          [
+            1,
+            0.9907,
+            0.9901
+          ],
+          [
+            2,
+            0.9886,
+            0.9879
+          ],
+          [
+            3,
+            0.9843,
+            0.9843
+          ],
+          [
+            4,
+            0.9587,
+            0.9595
+          ],
+          [
+            5,
+            0.9594,
+            0.9606
+          ]
+        ],
+        "blur": [
+          [
+            1,
+            0.9857,
+            0.985
+          ],
+          [
+            2,
+            0.9515,
+            0.9471
+          ],
+          [
+            3,
+            0.7997,
+            0.7806
+          ],
+          [
+            4,
+            0.5424,
+            0.5229
+          ],
+          [
+            5,
+            0.3507,
+            0.3002
+          ]
+        ]
+      }
+    }
+  },
+  "crossdomain": {
+    "color": {
+      "acc": 0.9957,
+      "macro_f1": 0.9953
+    },
+    "segmented": {
+      "acc": 0.6835,
+      "macro_f1": 0.6571
+    },
+    "segmented_upper": {
+      "acc": 0.9957,
+      "macro_f1": 0.9954
+    },
+    "drop": 0.3122
+  },
+  "aug_ablation": {
+    "scratch": {
+      "basic": {
+        "acc": 0.9815,
+        "macro_f1": 0.9807,
+        "exp_id": "e1a"
+      },
+      "none": {
+        "acc": 0.9658,
+        "macro_f1": 0.9621,
+        "exp_id": "e2a"
+      },
+      "strong": {
+        "acc": 0.9644,
+        "macro_f1": 0.9588,
+        "exp_id": "e2c"
+      }
+    },
+    "pretrained": {
+      "basic": {
+        "acc": 0.9957,
+        "macro_f1": 0.9953,
+        "exp_id": "e1b"
+      },
+      "none": {
+        "acc": 0.9907,
+        "macro_f1": 0.9892,
+        "exp_id": "e2a"
+      },
+      "strong": {
+        "acc": 0.9929,
+        "macro_f1": 0.9913,
+        "exp_id": "e2c"
+      }
+    }
+  },
+  "diseases": [
+    {
+      "id": "bacterial-spot",
+      "en": "Bacterial Spot",
+      "cn": "番茄细菌性斑点病",
+      "cls": "Tomato___Bacterial_spot",
+      "kind": "细菌性病害",
+      "tag": "高传染",
+      "summary": "由 Xanthomonas 属细菌引起的叶、茎、果均可受害的病害，高温高湿、雨水飞溅时传播最快。",
+      "symptoms": [
+        "叶片初现水浸状小斑点，后扩大为深褐色近圆形病斑",
+        "病斑周围常有明显的黄色晕圈，是区别于真菌性斑点的重要特征",
+        "严重时病斑连片，叶片枯黄卷曲并大量脱落",
+        "果实表面形成黑褐色、略微隆起的疮痂状小斑"
+      ],
+      "causes": "病原细菌随病残体、种子和土壤越冬，靠雨水飞溅、灌溉水和农事操作传播；气温 24–30℃ 且叶面结露时发病最重。",
+      "prevention": [
+        "使用无病种子并进行温汤浸种处理",
+        "避免顶部喷灌，改用滴灌降低叶面湿度",
+        "及时清除病叶病果，收获后深翻病残体",
+        "发病初期可选用铜制剂或抗生素类药剂，注意轮换用药"
+      ],
+      "similar": [
+        "septoria-leaf-spot"
+      ],
+      "similar_note": "与斑枯病同为小型斑点，但本病的病斑带黄色晕圈、中央不呈灰白色，且叶背少见黑色小点。"
+    },
+    {
+      "id": "early-blight",
+      "en": "Early Blight",
+      "cn": "番茄早疫病",
+      "cls": "Tomato___Early_blight",
+      "kind": "真菌性病害",
+      "tag": "常见",
+      "summary": "由链格孢菌（Alternaria solani）引起，多从下部老叶开始发病，病斑具同心轮纹，是番茄生产中最常见的叶部病害之一。",
+      "symptoms": [
+        "下部老叶先出现褐色小点，逐渐扩大为圆形病斑",
+        "病斑上有明显的同心轮纹，呈“靶心”状，外围常伴黄化",
+        "多个病斑融合后叶片干枯，但通常不会整株迅速萎蔫",
+        "茎部和果实也可受害，形成凹陷的褐色病斑"
+      ],
+      "causes": "病菌以菌丝和分生孢子在病残体上越冬，温暖潮湿（25–28℃）且植株长势弱时易流行，老叶和缺肥植株更敏感。",
+      "prevention": [
+        "与非茄科作物轮作 2 年以上，清理病残体",
+        "合理密植、及时整枝打杈，改善通风透光",
+        "平衡施肥，避免后期缺氮早衰",
+        "发病初期喷施代森锰锌、苯醚甲环唑等登记药剂"
+      ],
+      "similar": [
+        "late-blight"
+      ],
+      "similar_note": "与晚疫病相比，早疫病病斑有清晰同心轮纹、扩展较慢，且很少在叶背形成白色霉层。"
+    },
+    {
+      "id": "late-blight",
+      "en": "Late Blight",
+      "cn": "番茄晚疫病",
+      "cls": "Tomato___Late_blight",
+      "kind": "卵菌性病害",
+      "tag": "高危险",
+      "summary": "由致病疫霉（Phytophthora infestans）引起，流行速度极快，低温高湿条件下可在数天内毁园，是番茄和马铃薯的头号病害。",
+      "symptoms": [
+        "叶尖或叶缘出现不规则水浸状暗绿色斑，迅速扩大为褐色大斑",
+        "湿度高时病斑边缘叶背产生一圈白色稀疏霉层",
+        "茎部出现黑褐色条斑，严重时植株上部枯死",
+        "青果出现油浸状褐色硬斑，表面不平整，不软腐"
+      ],
+      "causes": "病原随气流和雨水远距离传播，适宜温度 18–22℃、相对湿度 85% 以上；昼夜温差大、结露时间长时爆发风险最高。",
+      "prevention": [
+        "选用抗病品种，避免与马铃薯邻作",
+        "控制棚内湿度，及时通风、避免叶面长时间结露",
+        "发现中心病株立即拔除并带出田外销毁",
+        "流行期前喷施氟啶胺、烯酰吗啉等登记药剂预防"
+      ],
+      "similar": [
+        "early-blight",
+        "leaf-mold"
+      ],
+      "similar_note": "与早疫病的区别在于病斑无同心轮纹、呈水浸状且扩展迅猛；与叶霉病的区别是后者叶背为橄榄色绒霉而非白色霉层。"
+    },
+    {
+      "id": "leaf-mold",
+      "en": "Leaf Mold",
+      "cn": "番茄叶霉病",
+      "cls": "Tomato___Leaf_Mold",
+      "kind": "真菌性病害",
+      "tag": "棚室高发",
+      "summary": "由黄枝孢菌（Passalora fulva）引起，典型特征是叶正面褪绿、叶背长出橄榄色绒状霉层，保护地栽培中尤为常见。",
+      "symptoms": [
+        "叶正面出现边界不清的淡黄色斑块，逐渐扩大",
+        "叶背对应位置长出灰褐色至橄榄色绒状霉层",
+        "病斑增多后叶片卷曲、干枯，但一般不形成明显坏死大斑",
+        "严重时蔓延至茎、花和果实，影响坐果"
+      ],
+      "causes": "病菌在病残体和种子上越冬，孢子借气流传播；相对湿度 90% 以上、棚内通风不良、种植过密时发病严重。",
+      "prevention": [
+        "选用抗叶霉病的品种，种子消毒后播种",
+        "加强棚室通风，控制湿度在 85% 以下",
+        "及时摘除下部病叶，避免密植",
+        "发病初期选用嘧菌酯、氟硅唑等登记药剂交替喷施"
+      ],
+      "similar": [
+        "late-blight"
+      ],
+      "similar_note": "与晚疫病的关键差异：叶霉病叶背是橄榄色绒霉、病斑黄化但不水浸状；晚疫病则是水浸状褐斑加白色霉层。"
+    },
+    {
+      "id": "septoria-leaf-spot",
+      "en": "Septoria Leaf Spot",
+      "cn": "番茄斑枯病",
+      "cls": "Tomato___Septoria_leaf_spot",
+      "kind": "真菌性病害",
+      "tag": "多雨高发",
+      "summary": "由番茄壳针孢（Septoria lycopersici）引起，病斑小而多，中央灰白并散生黑色小点，多雨季节常自下而上迅速蔓延。",
+      "symptoms": [
+        "下部叶片先出现大量直径 2–3 mm 的圆形小斑",
+        "病斑中央灰白色、边缘深褐色，界限清晰",
+        "病斑中央可见细小黑点，即病原菌的分生孢子器",
+        "严重时叶片黄化、干枯脱落，植株早衰"
+      ],
+      "causes": "病菌以分生孢子器在病残体上越冬，靠雨水飞溅传播；温暖（20–25℃）多雨、田间积水时扩展迅速。",
+      "prevention": [
+        "清除病残体并深翻土壤，与非茄科作物轮作",
+        "采用滴灌或地膜覆盖，减少雨水飞溅",
+        "及时摘除下部病叶，保持田间通风",
+        "发病初期喷施代森锰锌、苯醚甲环唑等登记药剂"
+      ],
+      "similar": [
+        "bacterial-spot"
+      ],
+      "similar_note": "与细菌性斑点病相比，本病病斑中央灰白、可见黑色小点，且通常没有黄色晕圈。"
+    },
+    {
+      "id": "healthy",
+      "en": "Healthy",
+      "cn": "番茄健康叶片",
+      "cls": "Tomato___healthy",
+      "kind": "健康状态",
+      "tag": "无病害",
+      "summary": "未感染上述病害的正常番茄叶片，叶色均匀浓绿、叶面平展，是识别模型的重要对照类别。",
+      "symptoms": [
+        "叶片舒展、颜色均匀浓绿，无黄化或褪绿斑块",
+        "叶面平整，无水浸状、坏死斑或霉层",
+        "叶脉清晰，叶缘完整，无卷曲或焦枯",
+        "植株整体长势健壮，新叶老叶状态一致"
+      ],
+      "causes": "健康的栽培管理结果：光照充足、水肥均衡、通风良好，且未接触病原。",
+      "prevention": [
+        "保持合理的水肥与光照管理",
+        "定期巡查，发现异常叶片及早处理",
+        "做好通风与湿度控制，预防病害发生"
+      ],
+      "similar": [],
+      "similar_note": "健康叶片不含病斑与霉层；若出现局部黄化，应重点排查叶霉病早期与缺素症。"
+    }
+  ],
+  "images": {
+    "diseases": {
+      "bacterial-spot": "assets/img/diseases/bacterial-spot-1.jpg",
+      "bacterial-spot-alt": "assets/img/diseases/bacterial-spot-2.jpg",
+      "early-blight": "assets/img/diseases/early-blight-1.jpg",
+      "early-blight-alt": "assets/img/diseases/early-blight-2.jpg",
+      "late-blight": "assets/img/diseases/late-blight-1.jpg",
+      "late-blight-alt": "assets/img/diseases/late-blight-2.jpg",
+      "leaf-mold": "assets/img/diseases/leaf-mold-1.jpg",
+      "leaf-mold-alt": "assets/img/diseases/leaf-mold-2.jpg",
+      "septoria-leaf-spot": "assets/img/diseases/septoria-leaf-spot-1.jpg",
+      "septoria-leaf-spot-alt": "assets/img/diseases/septoria-leaf-spot-2.jpg",
+      "healthy": "assets/img/diseases/healthy-1.jpg",
+      "healthy-alt": "assets/img/diseases/healthy-2.jpg"
+    },
+    "corruptions": {
+      "clean": "assets/img/corruptions/clean.jpg",
+      "classes": {
+        "brightness": {
+          "1": "assets/img/corruptions/brightness-1.jpg",
+          "2": "assets/img/corruptions/brightness-2.jpg",
+          "3": "assets/img/corruptions/brightness-3.jpg",
+          "4": "assets/img/corruptions/brightness-4.jpg",
+          "5": "assets/img/corruptions/brightness-5.jpg"
+        },
+        "rotation": {
+          "1": "assets/img/corruptions/rotation-1.jpg",
+          "2": "assets/img/corruptions/rotation-2.jpg",
+          "3": "assets/img/corruptions/rotation-3.jpg",
+          "4": "assets/img/corruptions/rotation-4.jpg",
+          "5": "assets/img/corruptions/rotation-5.jpg"
+        },
+        "blur": {
+          "1": "assets/img/corruptions/blur-1.jpg",
+          "2": "assets/img/corruptions/blur-2.jpg",
+          "3": "assets/img/corruptions/blur-3.jpg",
+          "4": "assets/img/corruptions/blur-4.jpg",
+          "5": "assets/img/corruptions/blur-5.jpg"
+        }
+      }
+    },
+    "crossdomain": {
+      "color": "assets/img/crossdomain/color.jpg",
+      "segmented": "assets/img/crossdomain/segmented.jpg",
+      "class_name": "Tomato___Bacterial_spot",
+      "path": "Tomato___Bacterial_spot/00a7c269-3476-4d25-b744-44d6353cd921___GCREC_Bact.Sp 5807.JPG"
+    },
+    "gallery": {
+      "bacterial-spot": [
+        "assets/img/gallery/bacterial-spot/sample-1.jpg",
+        "assets/img/gallery/bacterial-spot/sample-2.jpg",
+        "assets/img/gallery/bacterial-spot/sample-3.jpg",
+        "assets/img/gallery/bacterial-spot/sample-4.jpg"
+      ],
+      "early-blight": [
+        "assets/img/gallery/early-blight/sample-1.jpg",
+        "assets/img/gallery/early-blight/sample-2.jpg",
+        "assets/img/gallery/early-blight/sample-3.jpg",
+        "assets/img/gallery/early-blight/sample-4.jpg"
+      ],
+      "late-blight": [
+        "assets/img/gallery/late-blight/sample-1.jpg",
+        "assets/img/gallery/late-blight/sample-2.jpg",
+        "assets/img/gallery/late-blight/sample-3.jpg",
+        "assets/img/gallery/late-blight/sample-4.jpg"
+      ],
+      "leaf-mold": [
+        "assets/img/gallery/leaf-mold/sample-1.jpg",
+        "assets/img/gallery/leaf-mold/sample-2.jpg",
+        "assets/img/gallery/leaf-mold/sample-3.jpg",
+        "assets/img/gallery/leaf-mold/sample-4.jpg"
+      ],
+      "septoria-leaf-spot": [
+        "assets/img/gallery/septoria-leaf-spot/sample-1.jpg",
+        "assets/img/gallery/septoria-leaf-spot/sample-2.jpg",
+        "assets/img/gallery/septoria-leaf-spot/sample-3.jpg",
+        "assets/img/gallery/septoria-leaf-spot/sample-4.jpg"
+      ],
+      "healthy": [
+        "assets/img/gallery/healthy/sample-1.jpg",
+        "assets/img/gallery/healthy/sample-2.jpg",
+        "assets/img/gallery/healthy/sample-3.jpg",
+        "assets/img/gallery/healthy/sample-4.jpg"
+      ]
+    }
+  },
+  "figures": [
+    {
+      "name": "class_distribution",
+      "src": "assets/img/figures/class_distribution.png"
+    },
+    {
+      "name": "e2_aug_ablation",
+      "src": "assets/img/figures/e2_aug_ablation.png"
+    },
+    {
+      "name": "e3_robustness_curves",
+      "src": "assets/img/figures/e3_robustness_curves.png"
+    },
+    {
+      "name": "e4_cross_domain",
+      "src": "assets/img/figures/e4_cross_domain.png"
+    },
+    {
+      "name": "e4a_confusion_matrix",
+      "src": "assets/img/figures/e4a_confusion_matrix.png"
+    },
+    {
+      "name": "gradcam_mobilenet_v3_small_blur_s4",
+      "src": "assets/img/figures/gradcam_mobilenet_v3_small_blur_s4.png"
+    },
+    {
+      "name": "gradcam_mobilenet_v3_small_clean",
+      "src": "assets/img/figures/gradcam_mobilenet_v3_small_clean.png"
+    }
+  ],
+  "docs": [
+    {
+      "name": "full_report.docx",
+      "src": "assets/docs/full_report.docx"
+    }
+  ],
+  "cost": [
+    {
+      "model": "cnn",
+      "params_m": "1.175",
+      "flops_g": "5.173",
+      "latency_ms_mean": "1.183",
+      "latency_ms_std": "0.236",
+      "latency_ms_p50": "1.041",
+      "fps": "845.3",
+      "device": "cuda / NVIDIA GeForce RTX 4060 Laptop GPU",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    },
+    {
+      "model": "mobilenet_v3_small",
+      "params_m": "1.524",
+      "flops_g": "0.111",
+      "latency_ms_mean": "3.984",
+      "latency_ms_std": "0.378",
+      "latency_ms_p50": "3.959",
+      "fps": "251.0",
+      "device": "cuda / NVIDIA GeForce RTX 4060 Laptop GPU",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    },
+    {
+      "model": "resnet18",
+      "params_m": "11.18",
+      "flops_g": "3.627",
+      "latency_ms_mean": "1.944",
+      "latency_ms_std": "0.344",
+      "latency_ms_p50": "1.84",
+      "fps": "514.3",
+      "device": "cuda / NVIDIA GeForce RTX 4060 Laptop GPU",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    }
+  ],
+  "cost_cpu": [
+    {
+      "model": "cnn",
+      "params_m": "1.175",
+      "flops_g": "5.173",
+      "latency_ms_mean": "22.481",
+      "latency_ms_std": "3.586",
+      "latency_ms_p50": "21.63",
+      "fps": "44.5",
+      "device": "cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    },
+    {
+      "model": "mobilenet_v3_small",
+      "params_m": "1.524",
+      "flops_g": "0.111",
+      "latency_ms_mean": "20.752",
+      "latency_ms_std": "5.123",
+      "latency_ms_p50": "19.662",
+      "fps": "48.2",
+      "device": "cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    },
+    {
+      "model": "resnet18",
+      "params_m": "11.18",
+      "flops_g": "3.627",
+      "latency_ms_mean": "28.673",
+      "latency_ms_std": "4.845",
+      "latency_ms_p50": "27.898",
+      "fps": "34.9",
+      "device": "cpu / Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+      "batch_size": "1",
+      "notes": "torch 2.8.0+cu126, threads=20"
+    }
+  ],
+  "history_best": [
+    {
+      "epoch": 1,
+      "lr_backbone": 9.890738003669029e-05,
+      "lr_head": 0.0009890738003669028,
+      "train_loss": 0.7244040796984087,
+      "val_loss": 0.5279525969169518,
+      "val_acc": 0.977904490377762,
+      "val_macro_f1": 0.9750892694384695
+    },
+    {
+      "epoch": 2,
+      "lr_backbone": 9.567727288213005e-05,
+      "lr_head": 0.0009567727288213003,
+      "train_loss": 0.527104287683818,
+      "val_loss": 0.49427338102759416,
+      "val_acc": 0.9843193157519601,
+      "val_macro_f1": 0.9811716150241304
+    },
+    {
+      "epoch": 3,
+      "lr_backbone": 9.045084971874738e-05,
+      "lr_head": 0.0009045084971874737,
+      "train_loss": 0.49553754000325656,
+      "val_loss": 0.48017757625471075,
+      "val_acc": 0.9871703492516037,
+      "val_macro_f1": 0.9848996457707101
+    },
+    {
+      "epoch": 4,
+      "lr_backbone": 8.345653031794292e-05,
+      "lr_head": 0.0008345653031794292,
+      "train_loss": 0.4843169699962681,
+      "val_loss": 0.4660572972963813,
+      "val_acc": 0.9950106913756237,
+      "val_macro_f1": 0.9945942670955424
+    },
+    {
+      "epoch": 5,
+      "lr_backbone": 7.500000000000001e-05,
+      "lr_head": 0.00075,
+      "train_loss": 0.47109432529412154,
+      "val_loss": 0.465294685902463,
+      "val_acc": 0.99215965787598,
+      "val_macro_f1": 0.9913965947026351
+    },
+    {
+      "epoch": 6,
+      "lr_backbone": 6.545084971874738e-05,
+      "lr_head": 0.0006545084971874737,
+      "train_loss": 0.4631810784339905,
+      "val_loss": 0.4586639899019675,
+      "val_acc": 0.9935851746258019,
+      "val_macro_f1": 0.9931366633689919
+    },
+    {
+      "epoch": 7,
+      "lr_backbone": 5.522642316338269e-05,
+      "lr_head": 0.0005522642316338268,
+      "train_loss": 0.46250029822724953,
+      "val_loss": 0.4530987141392355,
+      "val_acc": 0.9942979330007128,
+      "val_macro_f1": 0.9937167736951557
+    },
+    {
+      "epoch": 8,
+      "lr_backbone": 4.4773576836617344e-05,
+      "lr_head": 0.0004477357683661734,
+      "train_loss": 0.4536241155964821,
+      "val_loss": 0.4507238937120988,
+      "val_acc": 0.9935851746258019,
+      "val_macro_f1": 0.9931425128177014
+    },
+    {
+      "epoch": 9,
+      "lr_backbone": 3.454915028125264e-05,
+      "lr_head": 0.0003454915028125264,
+      "train_loss": 0.45001144688986333,
+      "val_loss": 0.4489769538385224,
+      "val_acc": 0.9957234497505346,
+      "val_macro_f1": 0.995396816152477
+    },
+    {
+      "epoch": 10,
+      "lr_backbone": 2.5000000000000018e-05,
+      "lr_head": 0.0002500000000000001,
+      "train_loss": 0.4498488604293767,
+      "val_loss": 0.44615264439786745,
+      "val_acc": 0.9950106913756237,
+      "val_macro_f1": 0.9945271426310245
+    },
+    {
+      "epoch": 11,
+      "lr_backbone": 1.654346968205711e-05,
+      "lr_head": 0.00016543469682057103,
+      "train_loss": 0.4487383925244394,
+      "val_loss": 0.44430721587822086,
+      "val_acc": 0.9957234497505346,
+      "val_macro_f1": 0.995396816152477
+    },
+    {
+      "epoch": 12,
+      "lr_backbone": 9.549150281252635e-06,
+      "lr_head": 9.549150281252631e-05,
+      "train_loss": 0.4441184112961543,
+      "val_loss": 0.4435989388974326,
+      "val_acc": 0.9971489665003563,
+      "val_macro_f1": 0.9971071592853115
+    },
+    {
+      "epoch": 13,
+      "lr_backbone": 4.322727117869952e-06,
+      "lr_head": 4.322727117869951e-05,
+      "train_loss": 0.443976280450238,
+      "val_loss": 0.4439551712399453,
+      "val_acc": 0.9971489665003563,
+      "val_macro_f1": 0.9971105269290889
+    },
+    {
+      "epoch": 14,
+      "lr_backbone": 1.092619963309716e-06,
+      "lr_head": 1.0926199633097156e-05,
+      "train_loss": 0.44453690665566836,
+      "val_loss": 0.4427557904764489,
+      "val_acc": 0.9957234497505346,
+      "val_macro_f1": 0.995396816152477
+    },
+    {
+      "epoch": 15,
+      "lr_backbone": 0.0,
+      "lr_head": 0.0,
+      "train_loss": 0.44515293144363643,
+      "val_loss": 0.4423314184269052,
+      "val_acc": 0.9964362081254454,
+      "val_macro_f1": 0.9962533930849062
+    }
+  ],
+  "figures_e1b": {
+    "confusion_matrix": [
+      [
+        318,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        149,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        284,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0,
+        142,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        266,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        238
+      ]
+    ]
+  },
+  "class_order": [
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___healthy"
+  ]
+}

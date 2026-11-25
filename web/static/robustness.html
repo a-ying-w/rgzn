@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>鲁棒性实验 · TomatoGuard</title>
+<meta name="description" content="亮度、旋转、模糊三类扰动下的模型性能退化曲线与实测对比。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">ROBUSTNESS TEST</span>
+      <h1>鲁棒性实验</h1>
+      <p class="lede">测试集准确率接近饱和，但真实拍摄会遇到逆光、手抖、失焦。这里对测试集施加亮度、旋转、模糊三类各五级扰动，观察精度如何衰减，并允许你亲自上传扰动图验证。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">3 类扰动 × 5 级</span>
+        <span class="tag tag-neutral">4 个模型对照</span>
+        <span class="tag tag-neutral">固定扰动参数</span>
+      </div>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head">
+        <h3>性能退化曲线</h3>
+        <div class="tabs" id="corruptionTabs">
+          <button class="tab active" data-name="brightness">亮度</button>
+          <button class="tab" data-name="rotation">旋转</button>
+          <button class="tab" data-name="blur">模糊</button>
+        </div>
+      </div>
+      <div class="chart-box tall" id="robustChart"></div>
+      <p class="chart-note" id="chartNote">横轴为扰动等级（1 最轻，5 最重），纵轴为测试集准确率。</p>
+    </section>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="label">亮度 · 5 级（迁移模型）</div><div class="value" id="sBri">—</div><div class="sub">从零模型：<span id="sBriScratch">—</span></div></div>
+      <div class="stat"><div class="label">旋转 · 5 级（迁移模型）</div><div class="value" id="sRot">—</div><div class="sub">从零模型：<span id="sRotScratch">—</span></div></div>
+      <div class="stat"><div class="label">模糊 · 5 级（迁移模型）</div><div class="value" id="sBlur">—</div><div class="sub">从零模型：<span id="sBlurScratch">—</span></div></div>
+      <div class="stat"><div class="label">最大跌幅</div><div class="value accent" id="sDrop">—</div><div class="sub">迁移模型 · 相对 clean</div></div>
+    </div>
+
+    <div class="robust-layout" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>五级扰动结果表</h3><span class="hint" id="tableHint">亮度</span></div>
+        <div class="table-wrap table-mobile-cards">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>模型</th>
+                <th class="num">1 级</th>
+                <th class="num">2 级</th>
+                <th class="num">3 级</th>
+                <th class="num">4 级</th>
+                <th class="num">5 级</th>
+              </tr>
+            </thead>
+            <tbody id="robustTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <div class="card-head"><h3>扰动样例</h3><span class="hint" id="sampleHint">亮度 · 1 级</span></div>
+        <div class="compare-images">
+          <figure><img id="cleanImg" alt="原始图片"><figcaption>原始测试图</figcaption></figure>
+          <figure><img id="corruptImg" alt="扰动图片"><figcaption id="corruptCap">扰动后</figcaption></figure>
+        </div>
+        <div class="level-group" style="margin-top:14px" id="levelGroup">
+          <button class="level-btn active" data-sev="1">1 级</button>
+          <button class="level-btn" data-sev="2">2 级</button>
+          <button class="level-btn" data-sev="3">3 级</button>
+          <button class="level-btn" data-sev="4">4 级</button>
+          <button class="level-btn" data-sev="5">5 级</button>
+        </div>
+        <button class="btn btn-primary btn-block" id="tryBtn" style="margin-top:14px">
+          <span data-icon="zap" data-size="17"></span>用当前模型实测这两张图
+        </button>
+        <div class="pred-compare" style="margin-top:14px">
+          <div class="pred-box"><div class="k">原始图片预测</div><div class="v" id="cleanPred">—</div><div class="p" id="cleanProb"></div></div>
+          <div class="pred-box"><div class="k">扰动图片预测</div><div class="v" id="corruptPred">—</div><div class="p" id="corruptProb"></div></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="section" style="padding-top:6px">
+      <div class="section-head"><div><h2>结论</h2><p>三个可以直接从曲线读出的现象。</p></div></div>
+      <div class="grid-3">
+        <div class="callout"><strong>亮度是最致命的扰动：</strong>从零模型在 4 级亮度下从 98.22% 掉到 49.47%，5 级仅剩 17.53%；迁移模型仍保持 93.44%，差距超过 75 个百分点。</div>
+        <div class="callout warn"><strong>强模糊会击穿所有模型：</strong>模糊 5 级时迁移模型 44.55%、从零模型 57.45%，两者都不可用。迁移学习并不能解决严重失焦。</div>
+        <div class="callout"><strong>旋转相对可控：</strong>五个等级下各模型仅缓慢下降，说明卷积特征对旋转具有一定不变性，但仍应避免拍摄过度倾斜。</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var LABELS = { brightness: "亮度", rotation: "旋转", blur: "模糊" };
+  var current = "brightness";
+  var sev = 1;
+  var data = null;
+  var chart = null;
+
+  function pct(v) { return (v * 100).toFixed(2) + "%"; }
+
+  function seriesFor(name) {
+    return Object.keys(data.robustness).map(function (key) {
+      var arm = data.robustness[key];
+      var points = arm.series[name] || [];
+      return {
+        name: arm.label,
+        type: "line",
+        smooth: true,
+        symbolSize: 6,
+        data: points.map(function (p) { return p[1]; }),
+        lineStyle: { width: key === "e3b" ? 3 : 2, type: key === "e3b" ? "solid" : "solid" },
+        itemStyle: key === "e3b" ? { color: "#237a57" } : undefined,
+        areaStyle: key === "e3b" ? { color: "rgba(35,122,87,.07)" } : undefined,
+        z: key === "e3b" ? 5 : 2
+      };
+    });
+  }
+
+  function drawChart() {
+    var el = document.getElementById("robustChart");
+    if (chart) { chart.dispose(); el.innerHTML = ""; }
+    chart = TG.chart(el, {
+      legend: { top: 0, data: Object.keys(data.robustness).map(function (k) { return data.robustness[k].label; }) },
+      grid: { left: 8, right: 20, top: 44, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: { type: "category", data: ["clean", "1 级", "2 级", "3 级", "4 级", "5 级"], boundaryGap: false, axisTick: { show: false }, axisLine: { lineStyle: { color: "#d7ded9" } } },
+      yAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; } }, splitLine: { lineStyle: { color: "#eef1ef" } } },
+      series: seriesFor(current).map(function (s) {
+        var clean = data.models.filter(function (m) { return m.exp_id === "e1b"; })[0];
+        s.data = [clean ? clean.acc : null].concat(s.data);
+        return s;
+      })
+    });
+    document.getElementById("chartNote").textContent =
+      "当前展示：" + LABELS[current] + "扰动。横轴 1–5 级，0 级为无扰动的 clean 测试集（此处以 E1b 的 clean 准确率作参考起点）。";
+  }
+
+  function drawTable(name) {
+    document.getElementById("tableHint").textContent = LABELS[name];
+    var rows = Object.keys(data.robustness).map(function (key) {
+      var arm = data.robustness[key];
+      var points = arm.series[name] || [];
+      var cells = points.map(function (p) {
+        var color = p[1] < 0.5 ? "var(--danger)" : (p[1] < 0.85 ? "var(--warn)" : "var(--text)");
+        return '<td class="num" data-label="' + p[0] + ' 级" style="color:' + color + '">' + pct(p[1]) + '</td>';
+      }).join("");
+      return '<tr class="' + (key === "e3b" ? "highlight" : "") + '"><td data-label="模型"><b>' + TG.escape(arm.label) + '</b></td>' + cells + '</tr>';
+    }).join("");
+    document.getElementById("robustTable").innerHTML = rows;
+  }
+
+  function statAt(name, key, level) {
+    var pts = (data.robustness[key].series[name] || []).filter(function (p) { return p[0] === level; })[0];
+    return pts ? pts[1] : null;
+  }
+
+  function fillStats() {
+    var e1bClean = (data.models.filter(function (m) { return m.exp_id === "e1b"; })[0] || {}).acc;
+    [["brightness", "sBri", "sBriScratch"], ["rotation", "sRot", "sRotScratch"], ["blur", "sBlur", "sBlurScratch"]].forEach(function (pair) {
+      var v = statAt(pair[0], "e3b", 5);
+      var s = statAt(pair[0], "e3a", 5);
+      document.getElementById(pair[1]).textContent = v === null ? "—" : pct(v);
+      document.getElementById(pair[2]).textContent = s === null ? "—" : pct(s);
+    });
+    var worst = Math.min(
+      statAt("brightness", "e3b", 5) || 1,
+      statAt("rotation", "e3b", 5) || 1,
+      statAt("blur", "e3b", 5) || 1
+    );
+    if (e1bClean) {
+      document.getElementById("sDrop").textContent = "−" + ((e1bClean - worst) * 100).toFixed(2) + " pp";
+    }
+  }
+
+  function updateImages() {
+    var base = data.images.corruptions;
+    if (!base || !base.classes) return;
+    document.getElementById("cleanImg").src = base.clean;
+    var src = base.classes[current] && base.classes[current][String(sev)];
+    document.getElementById("corruptImg").src = src || "";
+    document.getElementById("sampleHint").textContent = LABELS[current] + " · " + sev + " 级";
+    document.getElementById("corruptCap").textContent = LABELS[current] + " " + sev + " 级扰动";
+    document.getElementById("cleanPred").textContent = "—";
+    document.getElementById("corruptPred").textContent = "—";
+    document.getElementById("cleanProb").textContent = "";
+    document.getElementById("corruptProb").textContent = "";
+  }
+
+  document.querySelectorAll("#corruptionTabs .tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      document.querySelectorAll("#corruptionTabs .tab").forEach(function (t) { t.classList.remove("active"); });
+      tab.classList.add("active");
+      current = tab.getAttribute("data-name");
+      drawChart();
+      drawTable(current);
+      updateImages();
+    });
+  });
+
+  document.querySelectorAll("#levelGroup .level-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#levelGroup .level-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      sev = Number(btn.getAttribute("data-sev"));
+      updateImages();
+    });
+  });
+
+  function predictUrl(url) {
+    return fetch(url).then(function (r) { return r.blob(); }).then(function (blob) {
+      var fd = new FormData();
+      fd.append("file", blob, "sample.jpg");
+      return fetch("api/predict", { method: "POST", body: fd }).then(function (r) { return r.json(); });
+    });
+  }
+
+  document.getElementById("tryBtn").addEventListener("click", function () {
+    if (!data) return;
+    var base = data.images.corruptions;
+    var btn = this;
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+    Promise.all([predictUrl(base.clean), predictUrl(base.classes[current][String(sev)])])
+      .then(function (res) {
+        var clean = res[0], corrupt = res[1];
+        document.getElementById("cleanPred").textContent = clean.uncertain ? "不确定" : clean.top1.cn;
+        document.getElementById("cleanProb").textContent = pct(clean.top1.prob) + " · " + clean.inference_ms + " ms";
+        document.getElementById("corruptPred").textContent = corrupt.uncertain ? "不确定" : corrupt.top1.cn;
+        document.getElementById("corruptProb").textContent = pct(corrupt.top1.prob) + " · " + corrupt.inference_ms + " ms";
+        document.getElementById("corruptPred").style.color = corrupt.uncertain ? "var(--warn)" : "var(--text)";
+        TG.toast("实测完成：同一张图在扰动前后的预测已更新", "ok");
+      })
+      .catch(function () { TG.toast("实测失败，请确认推理服务已启动", "error"); })
+      .finally(function () {
+        btn.classList.remove("is-loading");
+        btn.disabled = false;
+      });
+  });
+
+  TG.loadSiteData().then(function (d) {
+    data = d;
+    drawChart();
+    drawTable(current);
+    fillStats();
+    updateImages();
+  }).catch(function () { TG.toast("实验数据加载失败", "error"); });
+})();
+</script>
+</body>
+</html>

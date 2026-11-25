@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "pbkdf2_sha256$120000$16ab5667e2d2689b7b5728c86afa70a2$0041d00ab03542b2883dcad5320904a672f18dc24832266cd5c35669950ad904",
+    "role": "admin",
+    "created_at": "2026-11-24T03:23:50.334227+00:00"
+  },
+  "user": {
+    "username": "user",
+    "password": "pbkdf2_sha256$120000$0a77d3185b4c4215c460668b62a0fdf2$1995fb3630755cf00cb7a90dd8e390c7835e769454936c693046c90131e134ee",
+    "role": "user",
+    "created_at": "2026-11-24T03:23:50.334227+00:00"
+  }
+}

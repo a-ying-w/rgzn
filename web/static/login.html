@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>登录 · TomatoGuard</title>
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="auth-body">
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark" data-icon="leaf"></span>
+      <b>TomatoGuard</b>
+    </div>
+    <h1>欢迎回来</h1>
+    <p class="lede">登录后可查看关于系统的全部内容；管理员账号可以看到完整的架构、技术栈与团队信息。</p>
+
+    <div id="authError" class="auth-error" style="display:none"></div>
+
+    <form id="loginForm" novalidate>
+      <div class="auth-field">
+        <label for="username">用户名</label>
+        <input id="username" name="username" type="text" autocomplete="username" required minlength="2" maxlength="32" placeholder="请输入用户名">
+      </div>
+      <div class="auth-field">
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required minlength="4" maxlength="64" placeholder="请输入密码">
+      </div>
+      <button type="submit" class="auth-submit" id="submitBtn">登录</button>
+    </form>
+
+    <div class="auth-foot">
+      还没有账号？<a href="register.html">立即注册</a>
+    </div>
+
+    <div class="auth-hint">
+      <b>课程演示用默认账号</b><br>
+      普通用户：<code>user / user123</code><br>
+      管理员：<code>admin / admin123</code>
+    </div>
+  </div>
+</main>
+
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var f = document.getElementById("loginForm");
+  var err = document.getElementById("authError");
+  var btn = document.getElementById("submitBtn");
+
+  /* 已登录直接跳回首页 */
+  TG.auth.me().then(function (d) {
+    if (d && d.user) {
+      location.replace("index.html");
+    }
+  });
+
+  function showErr(msg) {
+    err.textContent = msg || "操作失败";
+    err.style.display = msg ? "" : "none";
+  }
+
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    showErr("");
+    var username = document.getElementById("username").value.trim();
+    var password = document.getElementById("password").value;
+    if (!username || password.length < 4) {
+      showErr("请输入用户名和不少于 4 位的密码");
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "登录中…";
+    TG.auth.login(username, password)
+      .then(function (res) {
+        /* 本地缓存 + 刷新 nav + 根据 role 跳转 */
+        try { localStorage.setItem("tg_current_user", JSON.stringify(res.user)); } catch (_) {}
+        TG.currentUser = res.user;
+        location.replace(location.search.indexOf("redirect=") >= 0
+          ? decodeURIComponent(location.search.split("redirect=")[1])
+          : "index.html");
+      })
+      .catch(function (ex) {
+        showErr(ex.message || "登录失败");
+        btn.disabled = false;
+        btn.textContent = "登录";
+      });
+  });
+})();
+</script>
+</body>
+</html>
