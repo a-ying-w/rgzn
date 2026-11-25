@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>病害详情 · TomatoGuard</title>
+<meta name="description" content="番茄叶片病害的症状、成因、防治建议与易混淆病害对比。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container" id="detail">
+    <div class="page-head" style="padding-bottom:12px">
+      <span class="eyebrow">DISEASE DETAIL</span>
+      <h1 class="skeleton" style="width:280px;height:34px;color:transparent">加载中</h1>
+    </div>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var mount = document.getElementById("detail");
+  var id = new URLSearchParams(location.search).get("id") || "late-blight";
+
+  function render(all, disease, imgs) {
+    var idx = all.findIndex(function (d) { return d.id === disease.id; });
+    var prev = all[(idx - 1 + all.length) % all.length];
+    var next = all[(idx + 1) % all.length];
+    var similar = (disease.similar || []).map(function (sid) {
+      var s = all.filter(function (d) { return d.id === sid; })[0];
+      if (!s) return "";
+      return '<a class="card card-hover" href="disease.html?id=' + s.id + '" style="display:flex;align-items:center;gap:12px;padding:12px 14px">' +
+        '<img src="' + (imgs[s.id] || "assets/img/diseases/" + s.id + "-1.jpg") + '" alt="' + TG.escape(s.cn) + '" style="width:56px;height:56px;border-radius:8px;object-fit:cover">' +
+        '<span style="flex:1;min-width:0"><b style="display:block;font-size:14px">' + TG.escape(s.cn) + '</b>' +
+        '<span class="muted" style="font-size:12px">' + TG.escape(s.en) + '</span></span>' +
+        '<span data-icon="arrow" style="color:var(--brand)"></span></a>';
+    }).join("");
+
+    mount.innerHTML =
+      '<div class="page-head" style="padding-bottom:12px">' +
+      '<span class="eyebrow">DISEASE DETAIL</span>' +
+      '<div class="meta-row" style="margin:0 0 10px"><a class="muted" style="font-size:13px" href="library.html">← 返回病害百科</a></div>' +
+      '</div>' +
+
+      '<section class="disease-hero">' +
+      '<div class="photo"><img src="' + (imgs[disease.id] || "assets/img/diseases/" + disease.id + "-1.jpg") + '" alt="' + TG.escape(disease.cn) + '"></div>' +
+      '<div>' +
+      '<div class="tag-row" style="margin:0 0 12px">' +
+      '<span class="tag ' + (disease.id === "healthy" ? "tag-ok" : "tag-accent") + '">' + TG.escape(disease.tag) + '</span>' +
+      '<span class="tag tag-neutral">' + TG.escape(disease.kind) + '</span>' +
+      '<span class="tag tag-outline">模型类别：' + TG.escape(disease.cls) + '</span></div>' +
+      '<h1>' + TG.escape(disease.cn) + '</h1>' +
+      '<div class="en">' + TG.escape(disease.en) + '</div>' +
+      '<p class="intro">' + TG.escape(disease.summary) + '</p>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px">' +
+      '<a class="btn btn-primary" href="detect.html"><span data-icon="scan" data-size="17"></span>用模型识别</a>' +
+      '<a class="btn btn-ghost" href="library.html">全部病害</a></div>' +
+      '</div></section>' +
+
+      '<section class="detail-section">' +
+      '<h2>典型症状</h2>' +
+      '<ul class="symptom-list">' + disease.symptoms.map(function (s, i) {
+        return '<li><span>' + (i + 1) + '</span><div>' + TG.escape(s) + '</div></li>';
+      }).join("") + '</ul></section>' +
+
+      '<section class="detail-section">' +
+      '<h2>发病条件与成因</h2>' +
+      '<p class="body-text">' + TG.escape(disease.causes) + '</p></section>' +
+
+      '<section class="detail-section">' +
+      '<h2>防治建议</h2>' +
+      '<ul class="symptom-list">' + disease.prevention.map(function (s, i) {
+        return '<li><span>' + (i + 1) + '</span><div>' + TG.escape(s) + '</div></li>';
+      }).join("") + '</ul></section>' +
+
+      (similar ? '<section class="detail-section">' +
+        '<h2>易混淆病害</h2>' +
+        '<div class="compare-box">' +
+        '<div><h4>' + TG.escape(disease.cn) + '</h4><p>' + TG.escape(disease.kind) + ' · ' + TG.escape(disease.tag) + '</p></div>' +
+        '<div class="vs">VS</div>' +
+        '<div><h4>与下方病害的区分</h4><p>' + TG.escape(disease.similar_note) + '</p></div>' +
+        '</div>' +
+        '<div class="grid-2" style="margin-top:14px">' + similar + '</div></section>' : "") +
+
+      '<section class="detail-section" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">' +
+      '<a class="btn btn-ghost btn-sm" href="disease.html?id=' + prev.id + '">← ' + TG.escape(prev.cn) + '</a>' +
+      '<span class="muted" style="font-size:12.5px">共 ' + all.length + ' 类叶片状态</span>' +
+      '<a class="btn btn-ghost btn-sm" href="disease.html?id=' + next.id + '">' + TG.escape(next.cn) + ' →</a>' +
+      '</section>';
+
+    mount.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = TG.icon(el.getAttribute("data-icon")); });
+    document.title = disease.cn + " · TomatoGuard";
+  }
+
+  TG.loadSiteData().then(function (d) {
+    var all = d.diseases || [];
+    var imgs = (d.images && d.images.diseases) || {};
+    var disease = all.filter(function (x) { return x.id === id; })[0];
+    if (!disease) {
+      mount.innerHTML = '<div class="empty-state" style="padding:120px 24px"><h2 style="font-size:20px;color:var(--text)">未找到该病害</h2>' +
+        '<p style="margin-top:8px">请从病害百科进入，或检查链接中的 id 参数。</p>' +
+        '<a class="btn btn-primary btn-sm" href="library.html" style="margin-top:18px">返回病害百科</a></div>';
+      return;
+    }
+    render(all, disease, imgs);
+  }).catch(function () {
+    mount.innerHTML = '<div class="empty-state" style="padding:120px 24px"><p>数据加载失败，请确认推理服务已启动</p></div>';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>跨域实验 · TomatoGuard</title>
+<meta name="description" content="color → segmented 跨域实验，检验模型是否依赖背景颜色线索。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">CROSS-DOMAIN TEST</span>
+      <h1>跨域实验：color → segmented</h1>
+      <p class="lede">训练用带背景的原图（color），测试换成去背景的抠图（segmented）。如果模型真的在看叶片病斑，精度应基本不变；如果它偷偷依赖土壤、光照等背景线索，精度就会大幅下跌。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">零样本跨域</span>
+        <span class="tag tag-neutral">同类别、同测试集</span>
+        <span class="tag tag-neutral">仅改变背景</span>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="label">同域基线 color → color</div><div class="value brand" id="sameAcc">—</div><div class="sub">E1b · 主模型</div></div>
+      <div class="stat"><div class="label">跨域 color → segmented</div><div class="value" id="crossAcc" style="color:var(--warn)">—</div><div class="sub">E4a · 零样本迁移</div></div>
+      <div class="stat"><div class="label">性能跌幅</div><div class="value accent" id="dropAcc">—</div><div class="sub">较同域基线</div></div>
+      <div class="stat"><div class="label">域内上界 seg → seg</div><div class="value" id="upperAcc">—</div><div class="sub">E4b · 重新训练</div></div>
+    </div>
+
+    <div class="compare-grid" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>三种评测条件对比</h3><span class="hint">测试集准确率</span></div>
+        <div class="chart-box" id="crossChart" style="height:340px"></div>
+        <p class="chart-note">同域基线接近饱和，跨域零样本骤降；用 segmented 数据重新训练后精度恢复，说明差距来自域偏移而非类别难度。</p>
+      </section>
+      <section class="card card-pad">
+        <div class="card-head"><h3>同一张图，两种形态</h3><span class="hint" id="pairHint">测试集样本</span></div>
+        <div class="compare-images">
+          <figure><img id="colorImg" alt="带背景原图"><figcaption>color · 带背景原图</figcaption></figure>
+          <figure><img id="segImg" alt="去背景抠图"><figcaption>segmented · 去背景</figcaption></figure>
+        </div>
+        <button class="btn btn-ghost btn-block" id="trySegBtn" style="margin-top:14px">
+          <span data-icon="zap" data-size="17"></span>用主模型识别这张去背景图
+        </button>
+        <div class="pred-box" style="margin-top:12px">
+          <div class="k">主模型对 segmented 图的预测</div>
+          <div class="v" id="segPred">—</div>
+          <div class="p" id="segProb"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head"><h3>结果明细</h3><span class="hint">冻结测试集 · 1403 张</span></div>
+      <div class="table-wrap table-mobile-cards">
+        <table class="data-table">
+          <thead>
+            <tr><th>实验</th><th>训练域</th><th>测试域</th><th class="num">准确率</th><th class="num">Macro-F1</th><th>说明</th></tr>
+          </thead>
+          <tbody id="crossTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:6px">
+      <div class="section-head"><div><h2>这说明什么</h2><p>两个层面的结论，后者更重要。</p></div></div>
+      <div class="grid-2">
+        <div class="callout warn"><strong>模型部分依赖背景：</strong>仅去掉背景，准确率就从 <span id="c1">99.57%</span> 跌到 <span id="c2">68.35%</span>，跌幅 <span id="c3">31.22 pp</span>。实验室数据里的背景与类别高度相关，模型学到了一些"捷径"。</div>
+        <div class="callout"><strong>域内上限依然很高：</strong>用 segmented 数据重新训练（E4b）可回到 99.57%，说明去背景图本身信息足够，问题在于训练分布与部署场景不一致。</div>
+        <div class="callout"><strong>对真实应用的启示：</strong>田间拍摄的背景远比实验室复杂。若要在真实场景部署，需要补充多样化背景数据，或引入背景抑制 / 数据增强策略。</div>
+        <div class="callout"><strong>评估方式要更严格：</strong>单一分布上的高准确率容易高估模型。跨域、扰动、近重复划分三者结合，才能更接近真实可靠性。</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var data = null;
+  function pct(v) { return v === null || v === undefined ? "—" : (v * 100).toFixed(2) + "%"; }
+
+  TG.loadSiteData().then(function (d) {
+    data = d;
+    var cd = d.crossdomain || {};
+    var same = cd.color ? cd.color.acc : null;
+    var cross = cd.segmented ? cd.segmented.acc : null;
+    var upper = cd.segmented_upper ? cd.segmented_upper.acc : null;
+
+    document.getElementById("sameAcc").textContent = pct(same);
+    document.getElementById("crossAcc").textContent = pct(cross);
+    document.getElementById("upperAcc").textContent = pct(upper);
+    if (same !== null && cross !== null) {
+      document.getElementById("dropAcc").textContent = "−" + ((same - cross) * 100).toFixed(2) + " pp";
+      document.getElementById("c1").textContent = pct(same);
+      document.getElementById("c2").textContent = pct(cross);
+      document.getElementById("c3").textContent = ((same - cross) * 100).toFixed(2) + " pp";
+    }
+
+    var chart = TG.chart(document.getElementById("crossChart"), {
+      legend: { show: false },
+      grid: { left: 8, right: 20, top: 24, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: {
+        type: "category",
+        data: ["同域\ncolor→color", "跨域零样本\ncolor→seg", "域内上界\nseg→seg"],
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: "#d7ded9" } },
+        axisLabel: { fontSize: 11, lineHeight: 16 }
+      },
+      yAxis: { type: "value", min: 0.5, max: 1, axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; } }, splitLine: { lineStyle: { color: "#eef1ef" } } },
+      series: [{
+        type: "bar",
+        barWidth: 54,
+        data: [
+          { value: same, itemStyle: { color: "#237a57", borderRadius: [6, 6, 0, 0] } },
+          { value: cross, itemStyle: { color: "#f28b35", borderRadius: [6, 6, 0, 0] } },
+          { value: upper, itemStyle: { color: "#67a879", borderRadius: [6, 6, 0, 0] } }
+        ],
+        label: { show: true, position: "top", formatter: function (p) { return (p.value * 100).toFixed(2) + "%"; }, fontWeight: 600, color: "#202b25" }
+      }]
+    });
+
+    var imgs = d.images.crossdomain || {};
+    if (imgs.color) document.getElementById("colorImg").src = imgs.color;
+    if (imgs.segmented) document.getElementById("segImg").src = imgs.segmented;
+    if (imgs.class_name) {
+      var cn = (d.meta.class_cn || {})[imgs.class_name] || imgs.class_name;
+      document.getElementById("pairHint").textContent = "真实类别：" + cn;
+    }
+
+    document.getElementById("crossTable").innerHTML =
+      '<tr class="highlight"><td data-label="实验"><b>E1b</b></td><td data-label="训练域">color</td><td data-label="测试域">color</td>' +
+      '<td class="num" data-label="准确率"><b style="color:var(--brand)">' + pct(same) + '</b></td><td class="num" data-label="Macro-F1">' + (cd.color ? cd.color.macro_f1.toFixed(4) : "—") + '</td>' +
+      '<td data-label="说明" style="font-size:12.5px;color:var(--muted)">同域基线，主模型</td></tr>' +
+      '<tr><td data-label="实验"><b>E4a</b></td><td data-label="训练域">color</td><td data-label="测试域">segmented</td>' +
+      '<td class="num" data-label="准确率"><b style="color:var(--warn)">' + pct(cross) + '</b></td><td class="num" data-label="Macro-F1">' + (cd.segmented ? cd.segmented.macro_f1.toFixed(4) : "—") + '</td>' +
+      '<td data-label="说明" style="font-size:12.5px;color:var(--muted)">零样本跨域，不重新训练</td></tr>' +
+      '<tr><td data-label="实验"><b>E4b</b></td><td data-label="训练域">segmented</td><td data-label="测试域">segmented</td>' +
+      '<td class="num" data-label="准确率"><b style="color:var(--brand)">' + pct(upper) + '</b></td><td class="num" data-label="Macro-F1">' + (cd.segmented_upper ? cd.segmented_upper.macro_f1.toFixed(4) : "—") + '</td>' +
+      '<td data-label="说明" style="font-size:12.5px;color:var(--muted)">域内上界，作为参照</td></tr>';
+  }).catch(function () { TG.toast("实验数据加载失败", "error"); });
+
+  document.getElementById("trySegBtn").addEventListener("click", function () {
+    var btn = this;
+    var src = document.getElementById("segImg").src;
+    if (!src) return;
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+    fetch(src).then(function (r) { return r.blob(); }).then(function (blob) {
+      var fd = new FormData();
+      fd.append("file", blob, "segmented.jpg");
+      return fetch("api/predict", { method: "POST", body: fd }).then(function (r) { return r.json(); });
+    }).then(function (res) {
+      document.getElementById("segPred").textContent = res.uncertain ? "不确定" : res.top1.cn;
+      document.getElementById("segProb").textContent = pct(res.top1.prob) + " · " + res.inference_ms + " ms";
+      document.getElementById("segPred").style.color = res.uncertain ? "var(--warn)" : "var(--text)";
+      TG.toast("已用主模型完成实测", "ok");
+    }).catch(function () { TG.toast("实测失败，请确认推理服务已启动", "error"); })
+      .finally(function () { btn.classList.remove("is-loading"); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

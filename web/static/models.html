@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>模型概览 · TomatoGuard</title>
+<meta name="description" content="TomatoGuard 主模型 ResNet-18 的结构、参数量、预处理链路与训练配置。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">MODEL OVERVIEW</span>
+      <h1>模型概览</h1>
+      <p class="lede">主模型采用 ImageNet 预训练的 ResNet-18 整体微调。选型不是"越大越好"，而是在精度、参数量与推理成本之间取平衡点。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">主模型：ResNet-18</span>
+        <span class="tag tag-neutral">输入 224×224</span>
+        <span class="tag tag-neutral">6 类输出</span>
+        <span class="tag tag-ok" id="ckptTag">权重已加载</span>
+      </div>
+    </div>
+
+    <section class="model-hero" style="margin-bottom:28px">
+      <div class="card card-pad">
+        <div class="card-head">
+          <h3>ResNet-18 结构示意</h3>
+          <span class="hint">ImageNet → 番茄六分类</span>
+        </div>
+        <div class="flow">
+          <div class="flow-step"><b>输入</b>224×224×3</div>
+          <div class="flow-arrow" data-icon="arrow"></div>
+          <div class="flow-step"><b>Stem</b>7×7 Conv /2<br>MaxPool</div>
+          <div class="flow-arrow" data-icon="arrow"></div>
+          <div class="flow-step"><b>Layer 1–2</b>BasicBlock ×4<br>64 / 128 通道</div>
+          <div class="flow-arrow" data-icon="arrow"></div>
+          <div class="flow-step"><b>Layer 3–4</b>BasicBlock ×4<br>256 / 512 通道</div>
+          <div class="flow-arrow" data-icon="arrow"></div>
+          <div class="flow-step"><b>池化</b>Global AvgPool<br>512 维</div>
+          <div class="flow-arrow" data-icon="arrow"></div>
+          <div class="flow-step"><b>分类头</b>FC 512→6<br>Softmax</div>
+        </div>
+        <p class="chart-note">残差连接缓解深层网络退化；整体微调时 backbone 与 head 使用分组学习率（1e-4 / 1e-3）。</p>
+      </div>
+
+      <div class="card card-pad">
+        <div class="card-head"><h3>关键规格</h3><span class="hint">实测值</span></div>
+        <div class="model-spec">
+          <div class="spec-item"><div class="k">参数量</div><div class="v" id="specParams">11.18 M</div></div>
+          <div class="spec-item"><div class="k">准确率</div><div class="v" id="specAcc" style="color:var(--brand)">99.57%</div></div>
+          <div class="spec-item"><div class="k">Macro-F1</div><div class="v" id="specF1">—</div></div>
+          <div class="spec-item"><div class="k">FLOPs</div><div class="v" id="specFlops">3.63 G</div></div>
+          <div class="spec-item"><div class="k">单张延迟</div><div class="v" id="specLatency">1.94 ms</div></div>
+          <div class="spec-item"><div class="k">推理设备</div><div class="v" style="font-size:13px" id="specDevice">RTX 4060 (CUDA)</div></div>
+        </div>
+        <p class="chart-note" id="latencyNote">延迟为 batch=1、CUDA 环境实测中位数。</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="section-head">
+        <div>
+          <h2>候选模型</h2>
+          <p>同协议下比较三种规模的网络，主模型在精度与成本之间取得平衡。</p>
+        </div>
+        <a class="more" href="compare.html">查看完整对比 →</a>
+      </div>
+      <div class="model-card-grid" id="modelCards">
+        <div class="card card-pad skeleton" style="height:220px"></div>
+        <div class="card card-pad skeleton" style="height:220px"></div>
+        <div class="card card-pad skeleton" style="height:220px"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="compare-grid">
+        <div class="card card-pad">
+          <div class="card-head"><h3>预处理链路</h3><span class="hint">训练与评测一致</span></div>
+          <div class="flow">
+            <div class="flow-step"><b>读取图片</b>RGB 转换</div>
+            <div class="flow-arrow" data-icon="arrow"></div>
+            <div class="flow-step"><b>Resize</b>短边 256</div>
+            <div class="flow-arrow" data-icon="arrow"></div>
+            <div class="flow-step"><b>CenterCrop</b>224×224</div>
+            <div class="flow-arrow" data-icon="arrow"></div>
+            <div class="flow-step"><b>ToTensor</b>0–1 归一化</div>
+            <div class="flow-arrow" data-icon="arrow"></div>
+            <div class="flow-step"><b>Normalize</b>ImageNet 均值方差</div>
+          </div>
+          <p class="chart-note">Grad-CAM 的热力图与原图尺寸一致，均对应 224×224 中心裁剪后的输入。</p>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-head"><h3>训练配置</h3><span class="hint">configs/base.yaml</span></div>
+          <div class="table-wrap" style="border:0">
+            <table class="data-table" style="min-width:0">
+              <tbody>
+                <tr><td>轮数 epochs</td><td class="num">15</td></tr>
+                <tr><td>批大小 batch size</td><td class="num">64</td></tr>
+                <tr><td>主干 / 头部学习率</td><td class="num">1e-4 / 1e-3</td></tr>
+                <tr><td>优化器</td><td class="num">AdamW · cosine</td></tr>
+                <tr><td>标签平滑</td><td class="num">0.1</td></tr>
+                <tr><td>权重衰减</td><td class="num">1e-4</td></tr>
+                <tr><td>模型选择准则</td><td class="num">Macro-F1</td></tr>
+                <tr><td>随机种子</td><td class="num">42</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="callout reveal">
+      <strong>为什么不是 MobileNetV3？</strong>
+      在相同协议下，MobileNetV3-Small 的测试准确率与 ResNet-18 接近（99.57% vs 99.57%），参数量仅为 1.52M，
+      但其在强扰动下的稳定性并不优于 ResNet-18，且本项目部署在本地 CPU 也能接受的范围内。最终以 ResNet-18 作为主模型。
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var DESC = {
+    resnet18: {
+      name: "ResNet-18",
+      en: "Residual Network · 18 layers",
+      text: "残差网络的标准基线，11.18M 参数。ImageNet 预训练特征与番茄叶片纹理高度契合，整体微调后取得最高精度，作为最终主模型。",
+      pros: "精度最高 / 迁移效果好 / 结构成熟",
+      cons: "参数量与计算量高于轻量模型"
+    },
+    cnn: {
+      name: "自建 CNN",
+      en: "Custom Convolutional Network",
+      text: "为小数据集设计的轻量卷积网络，1.18M 参数，从零训练。结构简单、可解释性强，用于验证复杂骨干是否真的必要。",
+      pros: "参数少 / 训练快 / 结构透明",
+      cons: "依赖数据量，鲁棒性较弱"
+    },
+    mobilenet_v3_small: {
+      name: "MobileNetV3-Small",
+      en: "Lightweight Mobile Backbone",
+      text: "面向移动端的轻量网络，1.52M 参数、0.11 GFLOPs，推理成本最低。精度接近主模型，适合端侧部署探索。",
+      pros: "FLOPs 最低 / 适合端侧",
+      cons: "强扰动下稳定性一般"
+    }
+  };
+
+  TG.loadSiteData().then(function (d) {
+    var models = d.models || [];
+    var e1b = models.filter(function (m) { return m.exp_id === "e1b"; })[0];
+    var costs = d.cost || [];
+    var r18 = costs.filter(function (c) { return c.model === "resnet18"; })[0];
+
+    if (e1b) {
+      document.getElementById("specAcc").textContent = (e1b.acc * 100).toFixed(2) + "%";
+      document.getElementById("specF1").textContent = (e1b.macro_f1).toFixed(4);
+      document.getElementById("specParams").textContent = e1b.params_m + " M";
+    }
+    if (r18) {
+      document.getElementById("specFlops").textContent = r18.flops_g + " G";
+      document.getElementById("specLatency").textContent = r18.latency_ms_p50 + " ms";
+      document.getElementById("specDevice").textContent = "RTX 4060 (CUDA)";
+      document.getElementById("latencyNote").textContent =
+        "延迟为 batch=1、CUDA 环境实测 p50；CPU 环境下会明显变慢，但不影响识别结果。";
+    }
+
+    /* 候选模型卡片：每个架构取代表性实验 */
+    var reps = ["e1b", "e1c", "e1e"];
+    document.getElementById("modelCards").innerHTML = reps.map(function (exp) {
+      var m = models.filter(function (x) { return x.exp_id === exp; })[0];
+      if (!m) return "";
+      var info = DESC[m.model] || { name: m.name, en: m.en, text: "", pros: "", cons: "" };
+      var cost = costs.filter(function (c) { return c.model === m.model; })[0];
+      var highlight = exp === "e1b";
+      return '<div class="model-mini" style="' + (highlight ? "border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset" : "") + '">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+        '<div><h3>' + info.name + '</h3><span class="en">' + info.en + '</span></div>' +
+        (highlight ? '<span class="tag tag-brand">主模型</span>' : '<span class="tag tag-neutral">对照</span>') + '</div>' +
+        '<p>' + info.text + '</p>' +
+        '<ul>' +
+        '<li><span>参数量</span><b>' + (m.params_m || "—") + ' M</b></li>' +
+        '<li><span>测试准确率</span><b style="color:var(--brand)">' + (m.acc * 100).toFixed(2) + '%</b></li>' +
+        '<li><span>Macro-F1</span><b>' + m.macro_f1.toFixed(4) + '</b></li>' +
+        (cost ? '<li><span>FLOPs</span><b>' + cost.flops_g + ' G</b></li>' : '') +
+        (cost ? '<li><span>单张延迟</span><b>' + cost.latency_ms_p50 + ' ms</b></li>' : '') +
+        '</ul></div>';
+    }).join("");
+
+    document.querySelectorAll("[data-icon]").forEach(function (el) {
+      if (!el.innerHTML.trim()) el.innerHTML = TG.icon(el.getAttribute("data-icon"));
+    });
+  }).catch(function () {});
+
+  fetch("api/health").then(function (r) { return r.json(); }).then(function (d) {
+    document.getElementById("ckptTag").textContent = "在线 · " + d.model + " · " + d.device;
+  }).catch(function () {
+    var tag = document.getElementById("ckptTag");
+    tag.textContent = "推理服务未启动";
+    tag.className = "tag tag-warn";
+  });
+})();
+</script>
+</body>
+</html>

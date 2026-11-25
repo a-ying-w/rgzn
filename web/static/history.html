@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>识别历史 · TomatoGuard</title>
+<meta name="description" content="查看本机保存的识别记录，支持搜索、筛选与删除。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">DETECTION HISTORY</span>
+      <h1>识别历史</h1>
+      <p class="lede">记录保存在本机浏览器中（localStorage），不会上传到服务器。最多保留最近 50 条，清理浏览器数据会一并清除。</p>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat"><div class="label">记录总数</div><div class="value" id="statTotal">0</div><div class="sub">最近 50 条</div></div>
+      <div class="stat"><div class="label">不确定结果</div><div class="value" id="statUncertain" style="color:var(--warn)">0</div><div class="sub">置信度低于 60%</div></div>
+      <div class="stat"><div class="label">平均置信度</div><div class="value" id="statAvg">—</div><div class="sub">全部记录</div></div>
+      <div class="stat"><div class="label">最常见类别</div><div class="value" id="statTop" style="font-size:20px">—</div><div class="sub">按记录数统计</div></div>
+    </div>
+
+    <section class="card card-pad">
+      <div class="filter-bar" style="margin-bottom:18px">
+        <div class="search-box">
+          <span data-icon="search"></span>
+          <input class="input" id="searchInput" placeholder="搜索文件名或类别…" autocomplete="off">
+        </div>
+        <div class="field">
+          <select class="select" id="classFilter">
+            <option value="">全部类别</option>
+          </select>
+        </div>
+        <div class="field">
+          <select class="select" id="sortSelect">
+            <option value="time">按时间倒序</option>
+            <option value="conf">按置信度倒序</option>
+          </select>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="exportBtn"><span data-icon="download" data-size="15"></span>导出记录</button>
+        <button class="btn btn-danger btn-sm" id="clearAllBtn"><span data-icon="trash" data-size="15"></span>清空全部</button>
+      </div>
+
+      <div class="table-wrap table-mobile-cards" id="tableWrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>图片</th>
+              <th>识别结果</th>
+              <th class="num">置信度</th>
+              <th>识别时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="historyRows"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <span data-icon="clock"></span>
+        <p>还没有识别记录</p>
+        <a class="btn btn-primary btn-sm" href="detect.html" style="margin-top:14px">去识别第一张 →</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>识别记录详情</h3>
+      <button class="icon-btn" id="modalClose" aria-label="关闭"><span data-icon="x"></span></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "tg_history";
+  var records = [];
+  var filtered = [];
+
+  function load() {
+    try { records = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { records = []; }
+    if (!Array.isArray(records)) records = [];
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(records)); } catch (e) { TG.toast("保存失败：本地存储空间不足", "error"); }
+  }
+
+  function renderStats() {
+    $("statTotal").textContent = records.length;
+    var unc = records.filter(function (r) { return r.uncertain; }).length;
+    $("statUncertain").textContent = unc;
+    $("statAvg").textContent = records.length
+      ? (records.reduce(function (s, r) { return s + (r.top1 ? r.top1.prob : 0); }, 0) / records.length * 100).toFixed(1) + "%"
+      : "—";
+    var counts = {};
+    records.forEach(function (r) {
+      if (!r.top1) return;
+      var k = r.uncertain ? "不确定" : r.top1.cn;
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    var best = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
+    $("statTop").textContent = best || "—";
+    $("statTop").title = best ? counts[best] + " 条" : "";
+  }
+
+  function renderClassFilter() {
+    var set = {};
+    records.forEach(function (r) { if (r.top1) set[r.uncertain ? "不确定" : r.top1.cn] = 1; });
+    var current = $("classFilter").value;
+    $("classFilter").innerHTML = '<option value="">全部类别</option>' +
+      Object.keys(set).map(function (k) { return '<option value="' + TG.escape(k) + '">' + TG.escape(k) + '</option>'; }).join("");
+    if (set[current]) $("classFilter").value = current;
+  }
+
+  function render() {
+    var q = $("searchInput").value.trim().toLowerCase();
+    var cls = $("classFilter").value;
+    var sort = $("sortSelect").value;
+
+    filtered = records.filter(function (r) {
+      var name = (r.filename || "") + " " + (r.top1 ? r.top1.cn + " " + r.top1.en : "");
+      if (q && name.toLowerCase().indexOf(q) === -1) return false;
+      if (cls) {
+        var label = r.uncertain ? "不确定" : (r.top1 ? r.top1.cn : "");
+        if (label !== cls) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      if (sort === "conf") return (b.top1 ? b.top1.prob : 0) - (a.top1 ? a.top1.prob : 0);
+      return new Date(b.time) - new Date(a.time);
+    });
+
+    $("emptyState").hidden = filtered.length > 0;
+    $("tableWrap").style.display = filtered.length ? "" : "none";
+
+    $("historyRows").innerHTML = filtered.map(function (r) {
+      var status = r.uncertain ? '<span class="tag tag-warn">不确定</span>' : '<span class="tag tag-ok">正常</span>';
+      var name = r.uncertain ? "不确定输入" : (r.top1 ? r.top1.cn : "—");
+      var en = r.top1 ? r.top1.en : "";
+      return '<tr>' +
+        '<td><img class="history-thumb" src="' + (r.thumb || r.original || "") + '" alt=""></td>' +
+        '<td><b style="color:var(--text)">' + TG.escape(name) + '</b><br><span class="muted" style="font-size:11.5px">' + TG.escape(r.filename) + '</span></td>' +
+        '<td class="num">' + (r.top1 ? (r.top1.prob * 100).toFixed(2) + "%" : "—") + '</td>' +
+        '<td>' + TG.time(r.time) + '</td>' +
+        '<td>' + status + '</td>' +
+        '<td style="white-space:nowrap"><button class="icon-btn" data-view="' + r.id + '" title="查看详情"><span data-icon="eye"></span></button> ' +
+        '<a class="icon-btn" href="disease.html?id=' + (r.disease_id || "healthy") + '" title="病害详情"><span data-icon="book"></span></a> ' +
+        '<button class="icon-btn danger" data-del="' + r.id + '" title="删除"><span data-icon="trash"></span></button></td>' +
+        '</tr>';
+    }).join("");
+
+    $("historyRows").querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = TG.icon(el.getAttribute("data-icon")); });
+    $("historyRows").querySelectorAll("[data-view]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openDetail(btn.getAttribute("data-view")); });
+    });
+    $("historyRows").querySelectorAll("[data-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-del");
+        records = records.filter(function (r) { return r.id !== id; });
+        save();
+        renderStats(); renderClassFilter(); render();
+        TG.toast("已删除该记录", "ok");
+      });
+    });
+  }
+
+  function openDetail(id) {
+    var r = records.filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    var top3 = (r.top3 || []).map(function (t, i) {
+      return '<div class="prob-row"><span class="prob-name">' + (i + 1) + '. ' + TG.escape(t.cn) + '</span>' +
+        '<span class="prob-val">' + (t.prob * 100).toFixed(2) + '%</span>' +
+        '<div class="prob-track"><i style="width:' + Math.max(2, t.prob * 100).toFixed(1) + '%"></i></div></div>';
+    }).join("");
+    $("modalBody").innerHTML =
+      '<div class="cam-grid" style="grid-template-columns:1fr 1fr;margin-bottom:20px">' +
+      '<figure style="margin:0"><img src="' + (r.original || r.thumb) + '" alt="原图" style="border-radius:10px;border:1px solid var(--line);width:100%">' +
+      '<figcaption class="chart-note" style="text-align:center">原始图片</figcaption></figure>' +
+      '<figure style="margin:0"><img src="' + (r.overlay || r.thumb) + '" alt="热力图" style="border-radius:10px;border:1px solid var(--line);width:100%">' +
+      '<figcaption class="chart-note" style="text-align:center">Grad-CAM 叠加</figcaption></figure></div>' +
+      '<div class="result-main' + (r.uncertain ? " uncertain" : "") + '" style="margin-bottom:16px">' +
+      '<div class="caption">预测结果</div><div class="name" style="font-size:' + (r.uncertain ? "18px" : "22px") + '">' +
+      (r.uncertain ? "不确定（非六类番茄叶片）" : TG.escape(r.top1.cn)) + '</div>' +
+      '<div class="conf"><b>' + (r.top1 ? (r.top1.prob * 100).toFixed(1) + "%" : "—") + '</b>' +
+      '<span class="muted" style="font-size:13px">置信度</span></div></div>' +
+      (top3 ? '<div class="block-title" style="font-size:13px;font-weight:600;margin-bottom:12px">Top-3 结果</div><div class="prob-list" style="margin-bottom:18px">' + top3 + '</div>' : "") +
+      '<dl class="kv"><dt>文件名</dt><dd>' + TG.escape(r.filename) + '</dd>' +
+      '<dt>识别时间</dt><dd>' + TG.time(r.time) + '</dd>' +
+      '<dt>使用模型</dt><dd>' + TG.escape(r.model || "—") + '</dd>' +
+      '<dt>推理耗时</dt><dd>' + (r.inference_ms || "—") + ' ms</dd></dl>' +
+      '<div style="display:flex;gap:10px;margin-top:20px">' +
+      '<a class="btn btn-soft btn-sm" href="disease.html?id=' + (r.disease_id || "healthy") + '">查看病害详情</a>' +
+      '<button class="btn btn-ghost btn-sm" id="detailDel">删除这条记录</button></div>';
+
+    $("detailModal").classList.add("open");
+    $("detailDel").addEventListener("click", function () {
+      records = records.filter(function (x) { return x.id !== id; });
+      save();
+      $("detailModal").classList.remove("open");
+      renderStats(); renderClassFilter(); render();
+      TG.toast("已删除该记录", "ok");
+    });
+  }
+
+  $("modalClose").addEventListener("click", function () { $("detailModal").classList.remove("open"); });
+  $("detailModal").addEventListener("click", function (e) { if (e.target === $("detailModal")) $("detailModal").classList.remove("open"); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("detailModal").classList.remove("open"); });
+
+  $("searchInput").addEventListener("input", render);
+  $("classFilter").addEventListener("change", render);
+  $("sortSelect").addEventListener("change", render);
+
+  $("clearAllBtn").addEventListener("click", function () {
+    if (!records.length) { TG.toast("暂无记录可清空", "warn"); return; }
+    if (window.confirm("确定清空全部 " + records.length + " 条识别记录？此操作不可撤销。")) {
+      records = [];
+      save();
+      renderStats(); renderClassFilter(); render();
+      TG.toast("已清空全部记录", "ok");
+    }
+  });
+
+  $("exportBtn").addEventListener("click", function () {
+    if (!filtered.length) { TG.toast("当前没有可导出的记录", "warn"); return; }
+    var lines = ["文件名,预测类别,置信度,识别时间,状态,模型"];
+    filtered.forEach(function (r) {
+      lines.push([
+        '"' + (r.filename || "").replace(/"/g, '""') + '"',
+        r.uncertain ? "不确定" : (r.top1 ? r.top1.cn : ""),
+        r.top1 ? (r.top1.prob * 100).toFixed(2) + "%" : "",
+        TG.time(r.time),
+        r.uncertain ? "不确定" : "正常",
+        r.model || ""
+      ].join(","));
+    });
+    var blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    TG.download(url, "tomato-history-" + Date.now() + ".csv");
+    setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+  });
+
+  load();
+  renderStats();
+  renderClassFilter();
+  render();
+})();
+</script>
+</body>
+</html>

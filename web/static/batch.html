@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>批量识别 · TomatoGuard</title>
+<meta name="description" content="一次上传多张番茄叶片图片，批量识别并导出结果 CSV。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">BATCH DETECTION</span>
+      <h1>批量识别</h1>
+      <p class="lede">一次选择多张叶片图片，前端按队列逐张调用推理服务，完成后可导出汇总结果。适合整批巡检照片的快速筛查。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">排队并发：2</span>
+        <span class="tag tag-neutral">单张最大 15MB</span>
+        <span class="tag tag-neutral">结果可导出 CSV</span>
+      </div>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:20px">
+      <div class="uploader batch-drop" id="batchDrop">
+        <span class="up-icon" data-icon="layers"></span>
+        <h3>点击选择或拖拽多张图片</h3>
+        <p>支持一次选择多张 JPG / PNG，建议单批不超过 30 张</p>
+        <span class="formats" id="batchHint">尚未选择图片</span>
+        <input type="file" id="batchInput" accept="image/jpeg,image/png,image/jpg" multiple>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px">
+        <button class="btn btn-primary" id="startBtn" disabled><span data-icon="scan" data-size="18"></span><span id="startLabel">开始批量识别</span></button>
+        <button class="btn btn-ghost" id="clearBatchBtn" disabled>清空队列</button>
+        <button class="btn btn-ghost" id="csvBtn" disabled><span data-icon="download" data-size="16"></span>导出 CSV</button>
+        <span class="muted" style="font-size:13px;margin-left:auto" id="batchStatus">等待添加图片</span>
+      </div>
+
+      <div style="margin-top:16px" id="progressWrap" hidden>
+        <div class="progress"><i id="progressBar" style="width:0%"></i></div>
+        <div class="batch-stats" style="margin-top:14px">
+          <div><b id="statDone">0</b>已完成</div>
+          <div><b id="statTotal">0</b>总数</div>
+          <div><b id="statAvg" style="color:var(--brand)">—</b>平均置信度</div>
+          <div><b id="statFail" style="color:var(--danger)">0</b>失败</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:20px">
+      <div class="card-head">
+        <h3>待识别队列</h3>
+        <span class="hint" id="queueHint">0 张</span>
+      </div>
+      <div class="thumb-grid" id="thumbGrid"></div>
+      <div class="empty-state" id="queueEmpty">
+        <span data-icon="image"></span>
+        <p>还没有添加图片</p>
+      </div>
+    </section>
+
+    <section class="card card-pad" id="resultSection" hidden>
+      <div class="card-head">
+        <h3>批量识别结果</h3>
+        <span class="hint">按置信度从高到低排序</span>
+      </div>
+      <div class="table-wrap table-mobile-cards">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>图片</th>
+              <th>预测类别</th>
+              <th class="num">置信度</th>
+              <th class="num">耗时</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="resultRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var queue = [];
+  var results = [];
+  var running = false;
+
+  var drop = $("batchDrop");
+  var input = $("batchInput");
+
+  function addFiles(files) {
+    Array.prototype.forEach.call(files, function (file) {
+      if (!/^image\/(jpeg|jpg|png)$/i.test(file.type)) {
+        TG.toast(file.name + " 不是 JPG / PNG", "warn");
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        TG.toast(file.name + " 超过 15MB", "warn");
+        return;
+      }
+      queue.push({ id: "q_" + Date.now() + "_" + queue.length, file: file, url: URL.createObjectURL(file), state: "pending" });
+    });
+    renderQueue();
+  }
+
+  function renderQueue() {
+    $("queueHint").textContent = queue.length + " 张";
+    $("batchHint").textContent = queue.length ? "已选择 " + queue.length + " 张图片" : "尚未选择图片";
+    $("queueEmpty").hidden = queue.length > 0;
+    $("startBtn").disabled = queue.length === 0 || running;
+    $("clearBatchBtn").disabled = queue.length === 0 || running;
+    $("batchStatus").textContent = running ? "识别进行中…" : (queue.length ? "准备就绪" : "等待添加图片");
+
+    $("thumbGrid").innerHTML = queue.map(function (item) {
+      var stateTag = { pending: '<span class="tag tag-neutral">待识别</span>',
+        running: '<span class="tag tag-warn">识别中</span>',
+        done: '<span class="tag tag-ok">完成</span>',
+        fail: '<span class="tag tag-danger">失败</span>' }[item.state];
+      return '<div class="thumb-card"><span class="state">' + stateTag + '</span>' +
+        (running ? '' : '<button class="remove" data-id="' + item.id + '" aria-label="移除"><span data-icon="x"></span></button>') +
+        '<img src="' + item.url + '" alt="' + TG.escape(item.file.name) + '">' +
+        '<div class="meta"><b title="' + TG.escape(item.file.name) + '">' + TG.escape(item.file.name) + '</b>' + TG.bytes(item.file.size) + '</div></div>';
+    }).join("");
+    $("thumbGrid").querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = TG.icon(el.getAttribute("data-icon")); });
+
+    if (!running) {
+      $("thumbGrid").querySelectorAll(".remove").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-id");
+          queue = queue.filter(function (q) { return q.id !== id; });
+          renderQueue();
+        });
+      });
+    }
+    $("csvBtn").disabled = results.length === 0;
+  }
+
+  input.addEventListener("change", function () {
+    addFiles(input.files);
+    input.value = "";
+  });
+  drop.addEventListener("click", function (e) { if (e.target.tagName !== "INPUT") input.click(); });
+  drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("dragover"); });
+  drop.addEventListener("dragleave", function () { drop.classList.remove("dragover"); });
+  drop.addEventListener("drop", function (e) {
+    e.preventDefault();
+    drop.classList.remove("dragover");
+    addFiles(e.dataTransfer.files);
+  });
+
+  $("clearBatchBtn").addEventListener("click", function () {
+    queue = [];
+    results = [];
+    $("resultSection").hidden = true;
+    $("progressWrap").hidden = true;
+    renderQueue();
+  });
+
+  var completed = 0;
+  var failed = 0;
+
+  function updateProgress() {
+    var total = queue.length;
+    $("statTotal").textContent = total;
+    $("statDone").textContent = completed;
+    $("statFail").textContent = failed;
+    var pct = total ? (completed / total) * 100 : 0;
+    $("progressBar").style.width = pct.toFixed(1) + "%";
+    var ok = results.filter(function (r) { return r.ok; });
+    $("statAvg").textContent = ok.length
+      ? (ok.reduce(function (s, r) { return s + r.top1.prob; }, 0) / ok.length * 100).toFixed(1) + "%"
+      : "—";
+  }
+
+  function predict(item) {
+    item.state = "running";
+    var fd = new FormData();
+    fd.append("file", item.file, item.file.name);
+    var started = performance.now();
+    return fetch("api/predict", { method: "POST", body: fd })
+      .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || "失败"); return b; }); })
+      .then(function (data) {
+        item.state = "done";
+        results.push({ ok: true, name: item.file.name, thumb: item.url, data: data, ms: data.inference_ms });
+      })
+      .catch(function (err) {
+        item.state = "fail";
+        failed += 1;
+        results.push({ ok: false, name: item.file.name, thumb: item.url, error: err.message || "识别失败", ms: Math.round(performance.now() - started) });
+      })
+      .finally(function () {
+        completed += 1;
+        updateProgress();
+        renderQueue();
+      });
+  }
+
+  $("startBtn").addEventListener("click", function () {
+    if (running || !queue.length) return;
+    running = true;
+    results = [];
+    completed = 0;
+    failed = 0;
+    $("progressWrap").hidden = false;
+    $("resultSection").hidden = false;
+    $("resultRows").innerHTML = "";
+    $("startBtn").classList.add("is-loading");
+    $("startLabel").textContent = "识别中";
+
+    queue.forEach(function (q) { q.state = "pending"; });
+    renderQueue();
+    updateProgress();
+
+    var index = 0;
+    var CONCURRENCY = 2;
+
+    function next() {
+      if (index >= queue.length) {
+        if (queue.every(function (q) { return q.state === "done" || q.state === "fail"; })) finish();
+        return;
+      }
+      var item = queue[index++];
+      predict(item).then(function () { next(); }, function () { next(); });
+    }
+
+    for (var i = 0; i < Math.min(CONCURRENCY, queue.length); i++) next();
+  });
+
+  function finish() {
+    running = false;
+    $("startBtn").classList.remove("is-loading");
+    $("startLabel").textContent = "开始批量识别";
+    $("batchStatus").textContent = "识别完成：成功 " + (completed - failed) + " 张，失败 " + failed + " 张";
+    $("startBtn").disabled = true;
+    $("clearBatchBtn").disabled = false;
+    renderQueue();
+    renderResults();
+    TG.toast("批量识别完成", failed ? "warn" : "ok");
+  }
+
+  function renderResults() {
+    var sorted = results.slice().sort(function (a, b) {
+      return (b.ok ? b.data.top1.prob : -1) - (a.ok ? a.data.top1.prob : -1);
+    });
+    $("resultRows").innerHTML = sorted.map(function (r) {
+      var thumb = '<img class="thumb" src="' + r.thumb + '" alt="">';
+      if (!r.ok) {
+        return '<tr><td>' + thumb + '</td><td colspan="4" style="color:var(--danger)">' + TG.escape(r.error) + '</td>' +
+          '<td>' + TG.escape(r.name) + '</td></tr>';
+      }
+      var d = r.data;
+      var status = d.uncertain ? '<span class="tag tag-warn">不确定</span>' : '<span class="tag tag-ok">正常</span>';
+      return '<tr><td>' + thumb + '</td>' +
+        '<td><b style="color:var(--text)">' + TG.escape(d.top1.cn) + '</b><br><span class="muted" style="font-size:11.5px">' + TG.escape(d.filename) + '</span></td>' +
+        '<td class="num">' + (d.top1.prob * 100).toFixed(2) + '%</td>' +
+        '<td class="num">' + d.inference_ms + ' ms</td>' +
+        '<td>' + status + '</td>' +
+        '<td><a class="btn btn-sm btn-ghost" href="disease.html?id=' + d.top1.disease_id + '">查看病害</a></td></tr>';
+    }).join("");
+  }
+
+  $("csvBtn").addEventListener("click", function () {
+    if (!results.length) return;
+    var lines = ["文件名,预测类别,英文名称,置信度,推理耗时ms,状态"];
+    results.forEach(function (r) {
+      if (!r.ok) {
+        lines.push([r.name, "识别失败", "", "", r.ms, "失败"].join(","));
+      } else {
+        var d = r.data;
+        lines.push([r.name, d.top1.cn, d.top1.en, (d.top1.prob * 100).toFixed(2) + "%", d.inference_ms, d.uncertain ? "不确定" : "正常"].join(","));
+      }
+    });
+    var blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    TG.download(url, "tomato-batch-" + Date.now() + ".csv");
+    setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+  });
+})();
+</script>
+</body>
+</html>

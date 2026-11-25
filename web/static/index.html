@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TomatoGuard · 番茄叶片病害智能识别平台</title>
+<meta name="description" content="基于迁移学习的番茄叶片病害识别与鲁棒性分析平台，提供智能识别、病害百科、模型性能对比、鲁棒性实验与 Grad-CAM 可解释性分析。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">AI PLANT DISEASE DETECTION</span>
+        <h1>让 AI 守护<br><em>每一片番茄叶</em></h1>
+        <p class="sub">Intelligent Tomato Leaf Disease Recognition &amp; Analysis</p>
+        <p class="desc">
+          面向番茄叶片病害的智能识别与模型研究平台。上传一张叶片照片，即可获得六分类预测、
+          Grad-CAM 关注区域与病害知识；背后是统一协议下的迁移学习、数据增强与鲁棒性实验。
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" href="detect.html">
+            <span data-icon="scan" data-size="18"></span>立即开始识别
+          </a>
+          <a class="btn btn-ghost btn-lg" href="compare.html">
+            <span data-icon="chart" data-size="18"></span>探索模型分析
+          </a>
+        </div>
+        <div class="hero-points">
+          <span><span data-icon="check"></span>六类番茄叶片状态</span>
+          <span><span data-icon="check"></span>真实实验数据</span>
+          <span><span data-icon="check"></span>可解释可视化</span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <img id="heroImg"
+             src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=macro%20photograph%20of%20a%20single%20tomato%20leaf%20with%20early%20blight%20brown%20spots%2C%20clean%20soft%20light%2C%20shallow%20depth%20of%20field%2C%20high%20detail%2C%20agricultural%20science&image_size=landscape_4_3"
+             alt="番茄叶片微距照片" loading="eager"
+             onerror="this.onerror=null;this.src='assets/img/diseases/early-blight-1.jpg'">
+        <div class="scan-line"></div>
+        <div class="hero-frame"></div>
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <div><b>ResNet-18 · 6 Classes</b>测试集准确率 <span id="heroAcc">99.57%</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="metric-strip reveal">
+        <div>
+          <div class="label">识别类别</div>
+          <div class="value">6 <small>Classes</small></div>
+        </div>
+        <div>
+          <div class="label">主模型</div>
+          <div class="value" style="font-size:23px">ResNet-18</div>
+        </div>
+        <div>
+          <div class="label">测试集准确率</div>
+          <div class="value"><span id="statAcc">99.57</span><small>%</small></div>
+        </div>
+        <div>
+          <div class="label">可解释性技术</div>
+          <div class="value" style="font-size:23px">Grad-CAM</div>
+        </div>
+      </div>
+      <p class="chart-note">准确率为冻结测试集上的实验结果，非在线估算值。数据量 <span id="statImages">—</span> 张，训练 / 验证 / 测试 = <span id="statSplit">—</span>。</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>核心功能</h2>
+          <p>从一次识别到完整模型分析，四个入口覆盖产品使用与实验研究。</p>
+        </div>
+      </div>
+      <div class="grid-4 reveal">
+        <a class="feature-card" href="detect.html">
+          <span class="feature-icon" data-icon="scan"></span>
+          <h3>智能病害识别</h3>
+          <p>上传叶片照片，输出 Top-3 预测、置信度与 Grad-CAM 热力图。</p>
+          <span class="go">开始识别 <span data-icon="arrow"></span></span>
+        </a>
+        <a class="feature-card" href="library.html">
+          <span class="feature-icon" data-icon="book"></span>
+          <h3>病害知识库</h3>
+          <p>了解六种番茄叶片状态的典型症状、成因与防治建议。</p>
+          <span class="go">浏览百科 <span data-icon="arrow"></span></span>
+        </a>
+        <a class="feature-card" href="compare.html">
+          <span class="feature-icon" data-icon="chart"></span>
+          <h3>模型性能分析</h3>
+          <p>统一实验协议下对比 CNN、ResNet-18 与 MobileNetV3 的表现。</p>
+          <span class="go">查看对比 <span data-icon="arrow"></span></span>
+        </a>
+        <a class="feature-card" href="robustness.html">
+          <span class="feature-icon" data-icon="shield"></span>
+          <h3>鲁棒性实验</h3>
+          <p>亮度、旋转、模糊三重扰动下的性能退化曲线与结论。</p>
+          <span class="go">进入实验 <span data-icon="arrow"></span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>实验研究</h2>
+          <p>回答三个问题：迁移学习值不值、增强有没有用、模型扛不扛得住劣化。</p>
+        </div>
+        <a class="more" href="reports.html">全部实验报告 →</a>
+      </div>
+      <div class="grid-3 reveal">
+        <a class="exp-card" href="compare.html">
+          <div class="exp-figure"><img src="assets/img/figures/e4a_confusion_matrix.png" alt="混淆矩阵"></div>
+          <div class="exp-body">
+            <h3>迁移学习有效性</h3>
+            <p>从零训练 98.15%，ImageNet 预训练微调提升到 99.57%，同时显著改善扰动下的稳定性。</p>
+            <span class="go">查看性能对比 →</span>
+          </div>
+        </a>
+        <a class="exp-card" href="reports.html">
+          <div class="exp-figure"><img src="assets/img/figures/e2_aug_ablation.png" alt="数据增强消融"></div>
+          <div class="exp-body">
+            <h3>数据增强消融</h3>
+            <p>无增强、基础增强与强增强四臂对照，验证增强在小数据集上的边际收益。</p>
+            <span class="go">查看消融结果 →</span>
+          </div>
+        </a>
+        <a class="exp-card" href="robustness.html">
+          <div class="exp-figure"><img src="assets/img/figures/e3_robustness_curves.png" alt="鲁棒性曲线"></div>
+          <div class="exp-body">
+            <h3>模型鲁棒性实验</h3>
+            <p>亮度、旋转、模糊各五级扰动，量化精度衰减，暴露实验室精度与真实场景的差距。</p>
+            <span class="go">查看鲁棒性曲线 →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="card card-pad reveal" style="display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center">
+        <div>
+          <span class="eyebrow">RESEARCH PROTOCOL</span>
+          <h2 style="margin-top:12px;font-size:26px;letter-spacing:-.02em">统一协议，让每个数字可追溯</h2>
+          <p style="margin-top:12px;color:var(--muted);line-height:1.85">
+            全组共用同一套 pHash 近重复聚类划分，同一片叶子的多张照片不会跨训练/测试集；
+            所有评测走同一个指标实现，结果只追加不改写。这让"99.57%"不是一次偶然的好运气，
+            而是可复现的对照结论。
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+            <span class="tag tag-brand">pHash 近重复聚类</span>
+            <span class="tag tag-neutral">70 / 15 / 15 分层划分</span>
+            <span class="tag tag-neutral">Macro-F1 监控</span>
+            <span class="tag tag-neutral">固定随机种子</span>
+          </div>
+        </div>
+        <div class="grid-2" style="gap:12px">
+          <div class="card card-pad card-flat"><div class="muted" style="font-size:12.5px">训练集</div><div style="font-size:24px;font-weight:700"><span id="splitTrain">—</span></div><div class="muted" style="font-size:12px">70%</div></div>
+          <div class="card card-pad card-flat"><div class="muted" style="font-size:12.5px">验证集</div><div style="font-size:24px;font-weight:700"><span id="splitVal">—</span></div><div class="muted" style="font-size:12px">15%</div></div>
+          <div class="card card-pad card-flat"><div class="muted" style="font-size:12.5px">测试集</div><div style="font-size:24px;font-weight:700"><span id="splitTest">—</span></div><div class="muted" style="font-size:12px">15%</div></div>
+          <div class="card card-pad card-flat"><div class="muted" style="font-size:12.5px">重复组</div><div style="font-size:24px;font-weight:700"><span id="statGroups">—</span></div><div class="muted" style="font-size:12px">合并近重复</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+TG.loadSiteData().then(function (d) {
+  var meta = d.meta || {};
+  var models = d.models || [];
+  var e1b = models.filter(function (m) { return m.exp_id === "e1b"; })[0];
+  if (e1b && e1b.acc) {
+    document.getElementById("statAcc").textContent = (e1b.acc * 100).toFixed(2);
+    document.getElementById("heroAcc").textContent = (e1b.acc * 100).toFixed(2) + "%";
+  }
+  if (meta.n_images) document.getElementById("statImages").textContent = TG.num(meta.n_images);
+  if (meta.n_groups) document.getElementById("statGroups").textContent = TG.num(meta.n_groups);
+  var s = meta.split_sizes || {};
+  if (s.train) {
+    document.getElementById("splitTrain").textContent = TG.num(s.train);
+    document.getElementById("splitVal").textContent = TG.num(s.val);
+    document.getElementById("splitTest").textContent = TG.num(s.test);
+    document.getElementById("statSplit").textContent =
+      TG.num(s.train) + " / " + TG.num(s.val) + " / " + TG.num(s.test);
+  }
+}).catch(function () {});
+</script>
+</body>
+</html>

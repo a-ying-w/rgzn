@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>单图识别 · TomatoGuard</title>
+<meta name="description" content="上传番茄叶片照片，获取六分类预测、Top-3 置信度与 Grad-CAM 热力图。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">SINGLE IMAGE DETECTION</span>
+      <h1>番茄叶片智能识别</h1>
+      <p class="lede">上传番茄叶片图片，AI 将自动识别叶片状态并生成可视化分析结果。预处理与实验评测完全一致：Resize 256 → CenterCrop 224 → Normalize。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">当前模型：<b id="modelName">ResNet-18</b></span>
+        <span class="tag tag-neutral">支持类别：6 类</span>
+        <span class="tag tag-ok" id="modelState">模型状态：检测中</span>
+      </div>
+    </div>
+
+    <div class="detect-layout">
+      <!-- 左：上传区 -->
+      <section class="card card-pad detect-panel">
+        <div class="card-head">
+          <h3>图片上传</h3>
+          <span class="hint">JPG / PNG，最大 15MB</span>
+        </div>
+
+        <div id="uploadArea">
+          <div class="uploader" id="uploader">
+            <span class="up-icon" data-icon="upload"></span>
+            <h3>拖拽图片到此处，或点击选择</h3>
+            <p>建议拍摄叶片正面，光照均匀、背景简洁</p>
+            <span class="formats">支持 JPG、JPEG、PNG 格式</span>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
+          </div>
+        </div>
+
+        <div id="previewWrap" hidden>
+          <div class="preview">
+            <img id="previewImg" alt="待识别图片预览">
+            <div class="preview-actions">
+              <button class="icon-btn" id="zoomBtn" title="放大预览" aria-label="放大预览"><span data-icon="expand"></span></button>
+              <button class="icon-btn danger" id="removeBtn" title="移除图片" aria-label="移除图片"><span data-icon="trash"></span></button>
+            </div>
+            <div class="preview-bar">
+              <span id="fileMeta">—</span>
+              <span id="previewState">待识别</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detect-actions">
+          <button class="btn btn-ghost" id="clearBtn" disabled>清空</button>
+          <button class="btn btn-primary" id="runBtn" disabled>
+            <span data-icon="scan" data-size="18"></span><span id="runLabel">开始识别</span>
+          </button>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:12.5px;font-weight:600;color:var(--text-2)">示例图片</span>
+            <span class="muted" style="font-size:12px">来自测试集真实样本</span>
+          </div>
+          <div id="sampleStrip" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+        </div>
+
+        <div class="callout" style="font-size:13px">
+          <strong>提示：</strong>模型仅支持番茄六类叶片。若上传非番茄叶片或严重失焦的图片，结果会标注为「不确定」。
+        </div>
+      </section>
+
+      <!-- 右：结果区 -->
+      <section class="card card-pad result-panel" id="resultPanel">
+        <div class="card-head">
+          <h3>识别结果</h3>
+          <span class="hint" id="resultHint">等待上传</span>
+        </div>
+
+        <div class="result-empty" id="resultEmpty">
+          <span class="empty-icon" data-icon="scan"></span>
+          <div>
+            <strong style="display:block;color:var(--text-2)">尚未识别</strong>
+            <span style="font-size:13px">上传图片后，这里会显示预测类别、置信度与热力图</span>
+          </div>
+        </div>
+
+        <div id="resultBody" hidden>
+          <div class="result-main" id="top1Box">
+            <div class="caption">主要预测结果</div>
+            <div class="name" id="top1Name">—</div>
+            <div class="en" id="top1En">—</div>
+            <div class="conf"><b id="top1Prob">—</b><span class="muted" style="font-size:13px">置信度</span></div>
+          </div>
+
+          <div class="result-block" style="margin-top:16px">
+            <div class="block-title"><span>Top-3 分类结果</span><span class="muted" style="font-weight:400">概率</span></div>
+            <div class="prob-list" id="probList"></div>
+          </div>
+
+          <div class="result-block">
+            <div class="block-title">
+              <span>Grad-CAM 可视化</span>
+              <span class="image-tabs">
+                <button class="tab active" data-view="original">原始图片</button>
+                <button class="tab" data-view="heatmap">热力图</button>
+                <button class="tab" data-view="overlay">叠加图</button>
+              </span>
+            </div>
+            <div class="image-stage">
+              <img id="stageImg" alt="可视化结果">
+              <div class="stage-actions">
+                <button class="icon-btn" id="stageZoom" title="全屏查看"><span data-icon="expand"></span></button>
+                <button class="icon-btn" id="stageDownload" title="下载当前视图"><span data-icon="download"></span></button>
+              </div>
+            </div>
+            <p class="chart-note">高亮区域表示模型判病时实际关注的部位；预处理会做 224×224 中心裁剪，因此三张视图尺寸一致。</p>
+          </div>
+
+          <div class="result-block">
+            <div class="block-title"><span>识别信息</span></div>
+            <dl class="kv" id="infoList"></dl>
+          </div>
+
+          <div class="result-block" style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-soft btn-sm" id="saveBtn"><span data-icon="file" data-size="15"></span>保存识别记录</button>
+            <button class="btn btn-ghost btn-sm" id="reportBtn"><span data-icon="download" data-size="15"></span>下载识别报告</button>
+            <button class="btn btn-ghost btn-sm" id="againBtn"><span data-icon="refresh" data-size="15"></span>重新识别</button>
+          </div>
+
+          <a class="card card-flat" id="diseaseLink" href="library.html" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-top:16px">
+            <span class="feature-icon" style="width:36px;height:36px;border-radius:9px" data-icon="book"></span>
+            <span style="flex:1;min-width:0">
+              <b style="display:block;font-size:13.5px">查看该病害详情</b>
+              <span class="muted" style="font-size:12.5px" id="diseaseLinkText">症状、成因与防治建议</span>
+            </span>
+            <span data-icon="arrow" style="color:var(--brand)"></span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var state = { file: null, result: null, view: "original", saved: false };
+  var $ = function (id) { return document.getElementById(id); };
+
+  var uploader = $("uploader");
+  var fileInput = $("fileInput");
+  var previewWrap = $("previewWrap");
+  var previewImg = $("previewImg");
+  var runBtn = $("runBtn");
+  var clearBtn = $("clearBtn");
+
+  /* 健康检查：填充模型信息 */
+  fetch("api/health").then(function (r) { return r.json(); }).then(function (d) {
+    $("modelName").textContent = d.model + " · " + d.params_m + "M";
+    $("modelState").textContent = "模型状态：在线 · " + d.device;
+  }).catch(function () {
+    $("modelState").textContent = "模型状态：离线";
+    $("modelState").className = "tag tag-warn";
+  });
+
+  /* 示例图 */
+  TG.loadSiteData().then(function (d) {
+    var items = [];
+    var diseaseImgs = d.images && d.images.diseases ? d.images.diseases : {};
+    ["early-blight", "late-blight", "healthy", "septoria-leaf-spot"].forEach(function (id) {
+      if (diseaseImgs[id]) items.push({ src: diseaseImgs[id], label: id });
+    });
+    $("sampleStrip").innerHTML = items.map(function (it) {
+      return '<button class="sample-btn" data-src="' + it.src + '" title="载入示例图片" ' +
+        'style="border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#eef2ef;padding:0;cursor:pointer;aspect-ratio:1/1">' +
+        '<img src="' + it.src + '" alt="示例" style="width:100%;height:100%;object-fit:cover"></button>';
+    }).join("");
+    $("sampleStrip").querySelectorAll(".sample-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        fetch(btn.getAttribute("data-src")).then(function (r) { return r.blob(); }).then(function (blob) {
+          var name = btn.getAttribute("data-src").split("/").pop();
+          var file = new File([blob], name, { type: blob.type || "image/jpeg" });
+          setFile(file);
+        }).catch(function () { TG.toast("示例图片加载失败", "error"); });
+      });
+    });
+  }).catch(function () {});
+
+  function setFile(file) {
+    if (!file) return;
+    if (!/^image\/(jpeg|jpg|png)$/i.test(file.type)) {
+      TG.toast("仅支持 JPG / PNG 格式", "warn");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      TG.toast("图片超过 15MB，请压缩后再上传", "warn");
+      return;
+    }
+    state.file = file;
+    state.result = null;
+    state.saved = false;
+    previewImg.src = URL.createObjectURL(file);
+    previewImg.onload = function () {
+      $("fileMeta").textContent = file.name + " · " + TG.bytes(file.size) + " · " + previewImg.naturalWidth + "×" + previewImg.naturalHeight;
+    };
+    $("previewState").textContent = "待识别";
+    uploader.parentElement.hidden = true;
+    previewWrap.hidden = false;
+    runBtn.disabled = false;
+    clearBtn.disabled = false;
+    resetResult();
+  }
+
+  function resetResult() {
+    $("resultEmpty").hidden = false;
+    $("resultBody").hidden = true;
+    $("resultHint").textContent = state.file ? "可以开始识别" : "等待上传";
+    $("top1Box").classList.remove("uncertain");
+  }
+
+  function clearAll() {
+    state.file = null;
+    state.result = null;
+    state.saved = false;
+    fileInput.value = "";
+    previewWrap.hidden = true;
+    uploader.parentElement.hidden = false;
+    runBtn.disabled = true;
+    clearBtn.disabled = true;
+    resetResult();
+  }
+
+  uploader.addEventListener("click", function () { fileInput.click(); });
+  uploader.addEventListener("dragover", function (e) { e.preventDefault(); uploader.classList.add("dragover"); });
+  uploader.addEventListener("dragleave", function () { uploader.classList.remove("dragover"); });
+  uploader.addEventListener("drop", function (e) {
+    e.preventDefault();
+    uploader.classList.remove("dragover");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", function () { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  clearBtn.addEventListener("click", clearAll);
+  $("removeBtn").addEventListener("click", clearAll);
+  $("zoomBtn").addEventListener("click", function () { if (previewImg.src) TG.openLightbox(previewImg.src, "原图预览"); });
+
+  /* 识别 */
+  runBtn.addEventListener("click", function () {
+    if (!state.file) return;
+    var fd = new FormData();
+    fd.append("file", state.file, state.file.name);
+
+    runBtn.classList.add("is-loading");
+    runBtn.disabled = true;
+    $("runLabel").textContent = "识别中";
+    $("previewState").textContent = "正在识别…";
+    $("resultEmpty").hidden = true;
+    $("resultBody").hidden = true;
+    $("resultHint").textContent = "推理中…";
+
+    var loading = document.createElement("div");
+    loading.className = "result-empty";
+    loading.id = "loadingBox";
+    loading.innerHTML = '<span class="loading-inline">正在运行模型推理与 Grad-CAM…</span>';
+    $("resultEmpty").parentElement.insertBefore(loading, $("resultEmpty").nextSibling);
+
+    fetch("api/predict", { method: "POST", body: fd })
+      .then(function (r) {
+        return r.json().then(function (body) {
+          if (!r.ok) throw new Error(body.detail || "识别失败");
+          return body;
+        });
+      })
+      .then(function (data) {
+        state.result = data;
+        state.saved = false;
+        renderResult(data);
+        $("previewState").textContent = "识别完成";
+        $("resultHint").textContent = "推理耗时 " + data.inference_ms + " ms";
+        if (data.uncertain) TG.toast("置信度偏低，结果标注为不确定", "warn");
+      })
+      .catch(function (err) {
+        $("resultEmpty").hidden = false;
+        $("resultHint").textContent = "识别失败";
+        $("previewState").textContent = "识别失败";
+        TG.toast(err.message || "识别失败，请重试", "error");
+      })
+      .finally(function () {
+        runBtn.classList.remove("is-loading");
+        runBtn.disabled = false;
+        $("runLabel").textContent = "开始识别";
+        var box = $("loadingBox");
+        if (box) box.remove();
+      });
+  });
+
+  function renderResult(data) {
+    $("resultEmpty").hidden = true;
+    $("resultBody").hidden = false;
+    var box = $("top1Box");
+    box.classList.toggle("uncertain", !!data.uncertain);
+    $("top1Name").textContent = data.uncertain ? "不确定（非六类番茄叶片）" : data.top1.cn;
+    $("top1En").textContent = data.uncertain ? "Uncertain input" : data.top1.en + " · " + data.top1.class_name;
+    $("top1Prob").textContent = (data.top1.prob * 100).toFixed(1) + "%";
+
+    $("probList").innerHTML = data.top3.map(function (item) {
+      return '<div class="prob-row"><span class="prob-name">' + TG.escape(item.cn) + '</span>' +
+        '<span class="prob-val">' + (item.prob * 100).toFixed(2) + '%</span>' +
+        '<div class="prob-track"><i style="width:' + Math.max(2, item.prob * 100).toFixed(1) + '%"></i></div></div>';
+    }).join("");
+
+    state.view = "original";
+    document.querySelectorAll(".image-tabs .tab").forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-view") === "original");
+    });
+    $("stageImg").src = data.images.original;
+    $("stageImg").alt = data.top1.cn + " 原图";
+
+    var now = new Date();
+    $("infoList").innerHTML =
+      '<dt>图片名称</dt><dd>' + TG.escape(data.filename) + '</dd>' +
+      '<dt>识别时间</dt><dd>' + TG.time(now.toISOString()) + '</dd>' +
+      '<dt>使用模型</dt><dd>' + TG.escape(data.model) + '（' + data.params_m + 'M 参数）</dd>' +
+      '<dt>推理设备</dt><dd>' + TG.escape(data.device) + '</dd>' +
+      '<dt>推理耗时</dt><dd>' + data.inference_ms + ' ms</dd>' +
+      '<dt>输入尺寸</dt><dd>' + data.input_size[0] + ' × ' + data.input_size[1] + '</dd>';
+
+    var link = $("diseaseLink");
+    link.href = "disease.html?id=" + data.top1.disease_id;
+    $("diseaseLinkText").textContent = data.top1.cn + " · 症状、成因与防治建议";
+    $("saveBtn").disabled = false;
+  }
+
+  /* 视图切换 */
+  document.querySelectorAll(".image-tabs .tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      if (!state.result) return;
+      state.view = tab.getAttribute("data-view");
+      document.querySelectorAll(".image-tabs .tab").forEach(function (t) { t.classList.remove("active"); });
+      tab.classList.add("active");
+      $("stageImg").src = state.result.images[state.view];
+    });
+  });
+
+  $("stageZoom").addEventListener("click", function () {
+    if (state.result) TG.openLightbox(state.result.images[state.view], "Grad-CAM 可视化");
+  });
+  $("stageDownload").addEventListener("click", function () {
+    if (!state.result) return;
+    TG.download(state.result.images[state.view], "tomato-" + state.view + ".jpg");
+  });
+
+  /* 保存记录（localStorage，最多 50 条） */
+  function compress(src, size, quality) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, size / Math.max(img.width, img.height));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality || 0.72));
+      };
+      img.src = src;
+    });
+  }
+
+  $("saveBtn").addEventListener("click", function () {
+    if (!state.result || state.saved) return;
+    Promise.all([
+      compress(state.result.images.original, 200),
+      compress(state.result.images.overlay, 200),
+      state.file ? compress(URL.createObjectURL(state.file), 200) : Promise.resolve("")
+    ]).then(function (imgs) {
+      var d = state.result;
+      var record = {
+        id: "rec_" + Date.now(),
+        time: new Date().toISOString(),
+        filename: d.filename,
+        thumb: imgs[2] || imgs[0],
+        original: imgs[0],
+        overlay: imgs[1],
+        model: d.model,
+        inference_ms: d.inference_ms,
+        uncertain: d.uncertain,
+        top1: d.top1,
+        top3: d.top3,
+        disease_id: d.top1.disease_id
+      };
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem("tg_history") || "[]"); } catch (e) { list = []; }
+      list.unshift(record);
+      list = list.slice(0, 50);
+      try {
+        localStorage.setItem("tg_history", JSON.stringify(list));
+        state.saved = true;
+        TG.toast("已保存到识别历史", "ok");
+      } catch (e) {
+        TG.toast("本地存储已满，请先清理历史记录", "error");
+      }
+    });
+  });
+
+  /* 下载 HTML 报告 */
+  $("reportBtn").addEventListener("click", function () {
+    if (!state.result) return;
+    var d = state.result;
+    var rows = d.top3.map(function (t, i) {
+      return "<tr><td>" + (i + 1) + "</td><td>" + t.cn + "</td><td>" + t.en + "</td><td>" +
+        (t.prob * 100).toFixed(2) + "%</td></tr>";
+    }).join("");
+    var html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>识别报告</title>' +
+      '<style>body{font-family:"Microsoft YaHei",system-ui,sans-serif;color:#202b25;max-width:820px;margin:40px auto;padding:0 24px;line-height:1.7}' +
+      'h1{font-size:24px;color:#237a57}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #e8ece9;padding:8px 12px;text-align:left;font-size:14px}' +
+      'th{background:#eff6f0}.imgs{display:flex;gap:12px}.imgs figure{flex:1;margin:0}.imgs img{width:100%;border-radius:8px}' +
+      'figcaption{font-size:12px;color:#7b8580;text-align:center;margin-top:6px}.meta{color:#7b8580;font-size:13px}</style></head><body>' +
+      '<h1>TomatoGuard 识别报告</h1>' +
+      '<p class="meta">图片：' + TG.escape(d.filename) + ' ｜ 时间：' + TG.time() + ' ｜ 模型：' + d.model + ' ｜ 耗时：' + d.inference_ms + ' ms</p>' +
+      '<h2 style="font-size:17px">预测结果</h2><p style="font-size:22px;color:#237a57;font-weight:700">' +
+      (d.uncertain ? "不确定（非六类番茄叶片）" : d.top1.cn) + '　' + (d.top1.prob * 100).toFixed(1) + '%</p>' +
+      '<table><thead><tr><th>#</th><th>中文名称</th><th>英文名称</th><th>置信度</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="imgs"><figure><img src="' + d.images.original + '"><figcaption>原始图片（224 中心裁剪）</figcaption></figure>' +
+      '<figure><img src="' + d.images.heatmap + '"><figcaption>Grad-CAM 热力图</figcaption></figure>' +
+      '<figure><img src="' + d.images.overlay + '"><figcaption>热力图叠加</figcaption></figure></div>' +
+      '<p class="meta" style="margin-top:20px">本报告由 TomatoGuard 自动生成，模型仅支持番茄六类叶片，结果仅供辅助参考。</p>' +
+      '</body></html>';
+    var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    TG.download(url, "tomato-report-" + Date.now() + ".html");
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  });
+
+  $("againBtn").addEventListener("click", function () {
+    if (state.file) {
+      runBtn.click();
+    } else {
+      TG.toast("请先上传图片", "warn");
+    }
+  });
+})();
+</script>
+</body>
+</html>

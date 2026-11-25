@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>注册 · TomatoGuard</title>
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body class="auth-body">
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark" data-icon="leaf"></span>
+      <b>TomatoGuard</b>
+    </div>
+    <h1>创建账号</h1>
+    <p class="lede">注册后默认角色为普通用户。管理员账号由课程项目内置，不开放注册。</p>
+
+    <div id="authError" class="auth-error" style="display:none"></div>
+
+    <form id="registerForm" novalidate>
+      <div class="auth-field">
+        <label for="username">用户名（2–32 位字母、数字或下划线）</label>
+        <input id="username" name="username" type="text" autocomplete="username" required minlength="2" maxlength="32" placeholder="例如 lemon">
+      </div>
+      <div class="auth-field">
+        <label for="password">密码（至少 4 位）</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="4" maxlength="64" placeholder="设置你的登录密码">
+      </div>
+      <div class="auth-field">
+        <label for="password2">再次输入密码</label>
+        <input id="password2" name="password2" type="password" autocomplete="new-password" required minlength="4" maxlength="64" placeholder="确认密码">
+      </div>
+      <button type="submit" class="auth-submit" id="submitBtn">注册并登录</button>
+    </form>
+
+    <div class="auth-foot">
+      已有账号？<a href="login.html">去登录</a>
+    </div>
+  </div>
+</main>
+
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var f = document.getElementById("registerForm");
+  var err = document.getElementById("authError");
+  var btn = document.getElementById("submitBtn");
+
+  TG.auth.me().then(function (d) {
+    if (d && d.user) location.replace("index.html");
+  });
+
+  function showErr(msg) {
+    err.textContent = msg || "操作失败";
+    err.style.display = msg ? "" : "none";
+  }
+
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    showErr("");
+    var username = document.getElementById("username").value.trim();
+    var password = document.getElementById("password").value;
+    var password2 = document.getElementById("password2").value;
+
+    if (!/^[A-Za-z0-9_]{2,32}$/.test(username)) {
+      showErr("用户名只能包含字母、数字和下划线，长度 2–32");
+      return;
+    }
+    if (password.length < 4) {
+      showErr("密码至少 4 位");
+      return;
+    }
+    if (password !== password2) {
+      showErr("两次输入的密码不一致");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "注册中…";
+    TG.auth.register(username, password)
+      .then(function (res) {
+        try { localStorage.setItem("tg_current_user", JSON.stringify(res.user)); } catch (_) {}
+        TG.currentUser = res.user;
+        location.replace("index.html");
+      })
+      .catch(function (ex) {
+        showErr(ex.message || "注册失败");
+        btn.disabled = false;
+        btn.textContent = "注册并登录";
+      });
+  });
+})();
+</script>
+</body>
+</html>

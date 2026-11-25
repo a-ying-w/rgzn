@@ -1,0 +1,71 @@
+/* TomatoGuard 设计变量：严格对应《番茄医生前端页面设计》V1.1 第三节 */
+
+:root {
+  /* 品牌色 */
+  --brand: #237a57;
+  --brand-hover: #1c6649;
+  --brand-soft: #67a879;
+  --brand-tint: #eff6f0;
+  --brand-tint-2: #e3efe6;
+
+  /* 强调与状态 */
+  --accent: #f28b35;
+  --accent-soft: #fdf1e6;
+  --ok: #2e9b69;
+  --ok-soft: #e8f5ee;
+  --warn: #e6a23c;
+  --warn-soft: #fdf5e6;
+  --danger: #d9534f;
+  --danger-soft: #fceceb;
+
+  /* 中性色 */
+  --bg: #f6f8f7;
+  --surface: #ffffff;
+  --surface-2: #fbfcfb;
+  --text: #202b25;
+  --text-2: #4a564f;
+  --muted: #7b8580;
+  --line: #e8ece9;
+  --line-strong: #d7ded9;
+
+  /* 圆角 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* 阴影 */
+  --shadow-xs: 0 1px 2px rgba(32, 43, 37, 0.04);
+  --shadow-sm: 0 2px 8px rgba(32, 43, 37, 0.05);
+  --shadow-md: 0 10px 28px rgba(32, 43, 37, 0.08);
+  --shadow-lg: 0 20px 48px rgba(32, 43, 37, 0.12);
+
+  /* 尺寸 */
+  --nav-h: 68px;
+  --container: 1440px;
+  --pad-x: 48px;
+  --gap: 20px;
+
+  /* 字体 */
+  --font: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 0.22s;
+}
+
+@media (max-width: 1199px) {
+  :root {
+    --pad-x: 32px;
+    --gap: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --pad-x: 20px;
+    --gap: 14px;
+    --nav-h: 60px;
+  }
+}

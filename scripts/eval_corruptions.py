@@ -1,7 +1,7 @@
-"""E3 扰动鲁棒性批量评测：4 模型 × 3 扰动 × 5 档严重度 = 60 次 eval。
+"""E3 扰动鲁棒性批量评测：5 模型 × 3 扰动 × 5 档严重度 = 75 次 eval。
 
 用法：
-  # 先把 B 的 4 个 best.pth 放进 runs/<exp_name>/best.pth（按下面 CKPT_BUNDLES 约定）
+  # 先把各模型的 best.pth 放进 runs/<exp_name>/best.pth（按下面 CKPT_BUNDLES 约定）
   python scripts/eval_corruptions.py
 
   # 只跑某个模型做冒烟
@@ -43,6 +43,11 @@ CKPT_BUNDLES: dict[str, dict[str, str]] = {
         "label": "resnet18-ft-cw",
         "config": "configs/e1_resnet18_ft_cw.yaml",
         "ckpt": "runs/e1d_resnet18_ft_cw_r100_s42/best.pth",
+    },
+    "e2c": {
+        "label": "resnet18-ft-strong",
+        "config": "configs/e2c_aug_strong.yaml",
+        "ckpt": "runs/e2c_resnet18_ft_r100_s42/best.pth",
     },
 }
 

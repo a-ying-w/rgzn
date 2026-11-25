@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>病害百科 · TomatoGuard</title>
+<meta name="description" content="番茄六类叶片病害与健康状态的症状、成因与防治建议。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">DISEASE LIBRARY</span>
+      <h1>番茄叶片病害百科</h1>
+      <p class="lede">模型可识别的六种叶片状态。每种病害都给出典型症状、发病条件与防治建议，可随时对照识别结果查看。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">6 类叶片状态</span>
+        <span class="tag tag-neutral">5 种病害 + 1 种健康</span>
+        <span class="tag tag-neutral">图片来自测试集</span>
+      </div>
+    </div>
+
+    <div class="tab-bar" id="chips">
+      <button class="chip active" data-kind="">全部</button>
+      <button class="chip" data-kind="真菌性病害">真菌性病害</button>
+      <button class="chip" data-kind="细菌性病害">细菌性病害</button>
+      <button class="chip" data-kind="卵菌性病害">卵菌性病害</button>
+      <button class="chip" data-kind="健康状态">健康状态</button>
+    </div>
+
+    <div class="disease-grid" id="diseaseGrid">
+      <div class="card card-pad skeleton" style="height:320px"></div>
+      <div class="card card-pad skeleton" style="height:320px"></div>
+      <div class="card card-pad skeleton" style="height:320px"></div>
+    </div>
+
+    <div class="card card-pad" style="margin-top:32px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center">
+      <span class="feature-icon" data-icon="scan"></span>
+      <div>
+        <h3 style="font-size:16px">不确定叶片属于哪一类？</h3>
+        <p class="muted" style="font-size:13.5px;margin-top:4px">直接拍照上传，让模型给出预测与关注区域，再回到百科对照症状。</p>
+      </div>
+      <a class="btn btn-primary" href="detect.html">开始识别</a>
+    </div>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var grid = document.getElementById("diseaseGrid");
+  var data = [];
+  var kind = "";
+
+  function render() {
+    var list = kind ? data.filter(function (d) { return d.kind === kind; }) : data;
+    grid.innerHTML = list.map(function (d) {
+      return '<a class="disease-card reveal in" href="disease.html?id=' + d.id + '">' +
+        '<div class="disease-thumb"><img src="' + (d.img || "assets/img/diseases/" + d.id + "-1.jpg") + '" alt="' + TG.escape(d.cn) + '" loading="lazy"></div>' +
+        '<div class="disease-body">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+        '<h3>' + TG.escape(d.cn) + '</h3><span class="tag ' + (d.id === "healthy" ? "tag-ok" : "tag-accent") + '">' + TG.escape(d.tag) + '</span></div>' +
+        '<span class="en">' + TG.escape(d.en) + ' · ' + TG.escape(d.kind) + '</span>' +
+        '<p>' + TG.escape(d.summary) + '</p>' +
+        '<span class="foot"><span>查看详情</span><span data-icon="arrow"></span></span>' +
+        '</div></a>';
+    }).join("");
+    grid.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = TG.icon(el.getAttribute("data-icon")); });
+  }
+
+  document.querySelectorAll("#chips .chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      document.querySelectorAll("#chips .chip").forEach(function (c) { c.classList.remove("active"); });
+      chip.classList.add("active");
+      kind = chip.getAttribute("data-kind");
+      render();
+    });
+  });
+
+  TG.loadSiteData().then(function (d) {
+    data = d.diseases || [];
+    var imgs = (d.images && d.images.diseases) || {};
+    data.forEach(function (x) { if (imgs[x.id]) x.img = imgs[x.id]; });
+    render();
+  }).catch(function () {
+    grid.innerHTML = '<div class="empty-state"><p>数据加载失败，请确认推理服务已启动</p></div>';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>关于系统 · TomatoGuard</title>
+<meta name="description" content="TomatoGuard 的项目定位、系统架构、技术栈、适用范围与团队分工。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">ABOUT THE SYSTEM</span>
+      <h1>关于 TomatoGuard</h1>
+      <p class="lede">一个把"模型准不准"讲清楚的番茄叶片病害识别系统：既提供可用的识别交互，也把迁移学习、数据增强、鲁棒性与跨域实验的结论摊开给你看。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">v1.1</span>
+        <span class="tag tag-neutral">课程研究项目</span>
+        <span class="tag tag-ok">非商业用途</span>
+      </div>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:26px" data-role="admin">
+      <div class="card-head"><h3>系统架构</h3><span class="hint">前后端同源，推理只读模型</span></div>
+      <div class="arch">
+        <div class="arch-node"><div class="icon" data-icon="image"></div><b>浏览器</b><small>14 个页面<br>原生 HTML / CSS / JS</small></div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="arch-node"><div class="icon" data-icon="server"></div><b>FastAPI 服务</b><small>静态托管<br>/api/predict</small></div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="arch-node"><div class="icon" data-icon="cpu"></div><b>ResNet-18</b><small>PyTorch 推理<br>224×224 输入</small></div>
+        <div class="flow-arrow" data-icon="arrow"></div>
+        <div class="arch-node"><div class="icon" data-icon="target"></div><b>Grad-CAM</b><small>特征图梯度<br>热力图输出</small></div>
+      </div>
+      <p class="chart-note">推理服务复用 src/models 与 src/data 的同一套实现，保证网页结果与实验评测完全一致；不写入 runs/ 与 results/，与原 Gradio Demo 互不影响。</p>
+    </section>
+
+    <div class="grid-2" style="margin-bottom:26px" data-role="admin">
+      <section class="card card-pad">
+        <div class="card-head"><h3>技术栈</h3><span class="hint">全部本地可运行</span></div>
+        <dl class="kv" style="grid-template-columns:110px 1fr;gap:10px 16px">
+          <dt>训练框架</dt><dd>PyTorch · torchvision</dd>
+          <dt>主模型</dt><dd>ResNet-18（ImageNet 预训练）</dd>
+          <dt>数据处理</dt><dd>Pandas · Pillow · imagehash（pHash）</dd>
+          <dt>推理服务</dt><dd>FastAPI · Uvicorn</dd>
+          <dt>前端</dt><dd>原生 HTML / CSS / JavaScript</dd>
+          <dt>图表</dt><dd>Apache ECharts（本地引入）</dd>
+          <dt>数据集</dt><dd>PlantVillage · Tomato 子集</dd>
+          <dt>原始 Demo</dt><dd>Gradio（app.py，保留）</dd>
+        </dl>
+      </section>
+
+      <section class="card card-pad">
+        <div class="card-head"><h3>适用范围与局限</h3><span class="hint">请务必阅读</span></div>
+        <ul class="symptom-list" style="gap:10px">
+          <li><span>1</span><div>仅支持番茄六类叶片状态，无法识别其他作物、其他病害或非叶片图像。</div></li>
+          <li><span>2</span><div>训练数据来自实验室背景，真实田间的复杂光照与遮挡会显著降低可靠性。</div></li>
+          <li><span>3</span><div>模型存在背景依赖（跨域实验下降 31.22 pp），预测结果不能作为唯一诊断依据。</div></li>
+          <li><span>4</span><div>本系统用于课程研究与教学演示，不替代农技人员的现场诊断。</div></li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="section" style="padding-top:0" data-role="admin">
+      <div class="section-head">
+        <div><h2>团队分工</h2><p>四个人各守一段链路，接口先定、数据先冻结，再并行推进。</p></div>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <span class="role">A</span>
+          <h3>数据与基建</h3>
+          <p>数据划分与去重、扰动实现、Dataset / transforms、指标与仓库骨架，冻结 splits 供全组使用。</p>
+        </div>
+        <div class="team-card">
+          <span class="role">B</span>
+          <h3>模型与训练</h3>
+          <p>自建 CNN 与 ResNet-18 注册、train.py / eval.py、训练配置与实验执行。</p>
+        </div>
+        <div class="team-card">
+          <span class="role">C</span>
+          <h3>轻量模型与可解释</h3>
+          <p>MobileNetV3-Small、Grad-CAM 实现、原始 Gradio Demo 与可解释性报告。</p>
+        </div>
+        <div class="team-card" style="border-color:var(--brand)">
+          <span class="role">D</span>
+          <h3>实验编排与分析</h3>
+          <p>E2 / E3 / E4 实验编排、结果汇总与图表、报告正文与结论撰写。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad" style="margin-bottom:24px">
+      <div class="card-head"><h3>版本信息</h3><span class="hint">构建自本地真实实验产物</span></div>
+      <dl class="kv" style="grid-template-columns:110px 1fr">
+        <dt>产品版本</dt><dd>TomatoGuard v1.1 · 设计稿 V1.1</dd>
+        <dt>数据版本</dt><dd id="dsVersion">—</dd>
+        <dt>实验配置</dt><dd>configs/base.yaml + 13 个实验配置</dd>
+        <dt>结果文件</dt><dd>results/results.csv · results/summary.csv</dd>
+        <dt>报告</dt><dd><a href="assets/docs/full_report.docx" download style="color:var(--brand)">full_report.docx</a></dd>
+      </dl>
+    </section>
+
+    <section class="card card-pad" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <h3 style="font-size:18px">从一张叶片照片开始</h3>
+        <p class="muted" style="font-size:13.5px;margin-top:6px">上传图片，查看预测、置信度与 Grad-CAM，再去百科对照症状。</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <a class="btn btn-primary" href="detect.html">开始识别</a>
+        <a class="btn btn-ghost" href="reports.html">查看实验报告</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/js/app.js"></script>
+<script>
+TG.loadSiteData().then(function (d) {
+  var meta = d.meta || {};
+  var el = document.getElementById("dsVersion");
+  if (el) {
+    el.textContent = (meta.created_at || "—") + " · " + TG.num(meta.n_images) + " 张 · seed " +
+      (meta.seed === undefined ? "42" : meta.seed) + (meta.frozen ? " · 已冻结" : "");
+  }
+}).catch(function () {});
+
+/* 非管理员看到提示：完整内容请登录管理员账号 */
+TG.auth.me().then(function (d) {
+  if (!d || !d.user || d.user.role !== "admin") {
+    var tip = document.createElement("div");
+    tip.className = "callout info";
+    tip.style.cssText = "margin:0 0 20px";
+    tip.innerHTML =
+      '<strong>课程演示提示：</strong>系统架构、技术栈、适用范围与团队分工为管理员视角内容。' +
+      (d && d.user
+        ? '你当前以普通用户登录。'
+        : '你当前未登录。') +
+      ' <a href="login.html" style="color:var(--brand);font-weight:500">登录</a> 后可查看完整内容。';
+    var head = document.querySelector(".page-head");
+    if (head && head.parentNode) head.parentNode.insertBefore(tip, head.nextSibling);
+  }
+});
+</script>
+</body>
+</html>

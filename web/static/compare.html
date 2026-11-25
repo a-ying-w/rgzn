@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>模型性能对比 · TomatoGuard</title>
+<meta name="description" content="统一协议下 ResNet-18、自建 CNN 与 MobileNetV3 的准确率、Macro-F1、混淆矩阵与逐类指标对比。">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+<header id="siteNav"></header>
+
+<main class="page-main">
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow">MODEL COMPARISON</span>
+      <h1>模型性能对比</h1>
+      <p class="lede">所有模型共用同一套 pHash 聚类划分、同一份测试集与同一套指标实现。下表与图表中的数字均来自 results.csv 与 runs/*/metrics.json，未做任何修饰。</p>
+      <div class="meta-row">
+        <span class="tag tag-brand">冻结测试集</span>
+        <span class="tag tag-neutral">6 类 · 1403 张</span>
+        <span class="tag tag-neutral">Macro-F1 选模</span>
+        <span class="tag tag-ok">结果可复现</span>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat"><div class="label">最高测试准确率</div><div class="value brand" id="statBestAcc">—</div><div class="sub" id="statBestName">—</div></div>
+      <div class="stat"><div class="label">最高 Macro-F1</div><div class="value" id="statBestF1">—</div><div class="sub">六类平均</div></div>
+      <div class="stat"><div class="label">从零 → 迁移提升</div><div class="value accent" id="statGain">—</div><div class="sub">ResNet-18 同骨干对比</div></div>
+      <div class="stat"><div class="label">测试样本</div><div class="value" id="statTestN">1,403</div><div class="sub">占全量 15%</div></div>
+    </div>
+
+    <div class="compare-grid" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>测试集准确率对比</h3><span class="hint">clean · test split</span></div>
+        <div class="chart-box" id="accChart"></div>
+      </section>
+      <section class="card card-pad">
+        <div class="card-head"><h3>主模型训练过程</h3><span class="hint">E1b · 15 epochs</span></div>
+        <div class="chart-box" id="curveChart"></div>
+      </section>
+    </div>
+
+    <section class="card card-pad" style="margin-bottom:22px">
+      <div class="card-head">
+        <h3>完整结果表</h3>
+        <span class="hint">按准确率排序，高亮为主模型</span>
+      </div>
+      <div class="table-wrap table-mobile-cards">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>实验</th>
+              <th>模型</th>
+              <th>预训练</th>
+              <th class="num">参数量</th>
+              <th class="num">准确率</th>
+              <th class="num">Macro-F1</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody id="modelTable"></tbody>
+        </table>
+      </div>
+      <p class="chart-note">E0 为冻结主干的对照臂；E1e 的权重未保留在本地，因此不参与在线 Demo，但指标来自真实评测记录。</p>
+    </section>
+
+    <div class="compare-grid" style="margin-bottom:22px">
+      <section class="card card-pad">
+        <div class="card-head"><h3>混淆矩阵</h3><span class="hint" id="cmHint">E1b · 测试集</span></div>
+        <div class="chart-box tall" id="cmChart" style="height:420px"></div>
+      </section>
+      <section class="card card-pad">
+        <div class="card-head">
+          <h3>逐类精确率 / 召回率</h3>
+          <div class="tabs" id="perClassTabs"></div>
+        </div>
+        <div class="chart-box tall" id="perClassChart" style="height:420px"></div>
+      </section>
+    </div>
+
+    <section class="section" style="padding-top:6px">
+      <div class="section-head"><div><h2>结论</h2><p>从表格中能直接读出的四件事。</p></div></div>
+      <div class="grid-2">
+        <div class="callout"><strong>迁移学习有效：</strong>ResNet-18 从零训练 98.15%，加载 ImageNet 权重后 99.57%，提升 1.42 个百分点；在扰动实验中的优势更明显。</div>
+        <div class="callout"><strong>类别加权无显著增益：</strong>E1d 准确率 99.50%，与 E1b 基本持平（-0.07pp）。在当前数据分布下，加权损失没有带来可见收益。</div>
+        <div class="callout"><strong>轻量模型可用：</strong>MobileNetV3-Small 仅 1.52M 参数、0.11 GFLOPs，准确率与 ResNet-18 同为 99.57%，适合端侧部署探索。</div>
+        <div class="callout warn"><strong>高准确率不等于可靠：</strong>测试集是实验室背景图，六类精度都接近饱和。真实拍摄中的亮度、模糊与背景变化，才是模型真正的考验。</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer id="siteFooter"></footer>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  var SHORT = {
+    "Tomato___Bacterial_spot": "细菌斑点",
+    "Tomato___Early_blight": "早疫",
+    "Tomato___Late_blight": "晚疫",
+    "Tomato___Leaf_Mold": "叶霉",
+    "Tomato___Septoria_leaf_spot": "斑枯",
+    "Tomato___healthy": "健康"
+  };
+  var charts = [];
+
+  function fmt(x) { return (x * 100).toFixed(2) + "%"; }
+
+  TG.loadSiteData().then(function (d) {
+    var models = (d.models || []).slice().sort(function (a, b) { return b.acc - a.acc; });
+    var classOrder = d.class_order || Object.keys(SHORT);
+
+    /* 顶部指标 */
+    if (models.length) {
+      var best = models[0];
+      document.getElementById("statBestAcc").textContent = fmt(best.acc);
+      document.getElementById("statBestName").textContent = best.exp_id.toUpperCase() + " · " + best.name;
+      var bestF1 = models.slice().sort(function (a, b) { return b.macro_f1 - a.macro_f1; })[0];
+      document.getElementById("statBestF1").textContent = bestF1.macro_f1.toFixed(4);
+    }
+    var e1a = models.filter(function (m) { return m.exp_id === "e1a"; })[0];
+    var e1b = models.filter(function (m) { return m.exp_id === "e1b"; })[0];
+    if (e1a && e1b) {
+      document.getElementById("statGain").textContent = "+" + ((e1b.acc - e1a.acc) * 100).toFixed(2) + " pp";
+    }
+    if (d.meta && d.meta.split_sizes && d.meta.split_sizes.test) {
+      document.getElementById("statTestN").textContent = TG.num(d.meta.split_sizes.test);
+    }
+
+    /* 准确率柱状图 */
+    var accChart = TG.chart(document.getElementById("accChart"), {
+      legend: { show: false },
+      grid: { left: 8, right: 54, top: 24, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: {
+        type: "value", min: 0.9, max: 1, splitNumber: 3,
+        axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; }, hideOverlap: true },
+        splitLine: { lineStyle: { color: "#eef1ef" } }
+      },
+      yAxis: { type: "category", inverse: true, data: models.map(function (m) { return m.exp_id.toUpperCase() + " " + m.name; }), axisLine: { show: false }, axisTick: { show: false } },
+      series: [{
+        type: "bar", barWidth: 16, data: models.map(function (m) {
+          return {
+            value: m.acc,
+            itemStyle: { color: m.exp_id === "e1b" ? "#237a57" : "#a9c9b6", borderRadius: [0, 4, 4, 0] }
+          };
+        }),
+        label: { show: true, position: "right", formatter: function (p) { return (p.value * 100).toFixed(2) + "%"; }, fontSize: 11, color: "#4a564f" }
+      }]
+    });
+    charts.push(accChart);
+
+    /* 训练曲线 */
+    var history = d.history_best || [];
+    var curve = TG.chart(document.getElementById("curveChart"), {
+      legend: { data: ["验证准确率", "验证 Macro-F1"], top: 0 },
+      grid: { left: 8, right: 8, top: 36, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: { type: "category", data: history.map(function (h) { return "E" + h.epoch; }), axisLine: { lineStyle: { color: "#d7ded9" } }, axisTick: { show: false } },
+      yAxis: { type: "value", min: 0.96, max: 1, axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; } }, splitLine: { lineStyle: { color: "#eef1ef" } } },
+      series: [
+        { name: "验证准确率", type: "line", smooth: true, symbolSize: 5, data: history.map(function (h) { return h.val_acc; }), lineStyle: { width: 2.5 }, areaStyle: { color: "rgba(35,122,87,.08)" } },
+        { name: "验证 Macro-F1", type: "line", smooth: true, symbolSize: 5, data: history.map(function (h) { return h.val_macro_f1; }), lineStyle: { width: 2, type: "dashed" }, itemStyle: { color: "#f28b35" } }
+      ]
+    });
+    charts.push(curve);
+
+    /* 表格 */
+    document.getElementById("modelTable").innerHTML = models.map(function (m) {
+      return '<tr class="' + (m.exp_id === "e1b" ? "highlight" : "") + '">' +
+        '<td data-label="实验"><b>' + m.exp_id.toUpperCase() + '</b></td>' +
+        '<td data-label="模型">' + TG.escape(m.name) + '</td>' +
+        '<td data-label="预训练">' + (m.pretrained ? '<span class="tag tag-brand">是</span>' : '<span class="tag tag-neutral">否</span>') + '</td>' +
+        '<td class="num" data-label="参数量">' + m.params_m + ' M</td>' +
+        '<td class="num" data-label="准确率"><b style="color:var(--brand)">' + fmt(m.acc) + '</b></td>' +
+        '<td class="num" data-label="Macro-F1">' + m.macro_f1.toFixed(4) + '</td>' +
+        '<td data-label="说明" style="font-size:12.5px;color:var(--muted)">' + TG.escape(m.note) + '</td>' +
+        '</tr>';
+    }).join("");
+
+    /* 混淆矩阵 */
+    var cmModel = e1b || models[0];
+    drawCM(cmModel, classOrder);
+
+    /* 逐类指标选择器 */
+    var withPerClass = models.filter(function (m) {
+      return m.per_class_precision && m.per_class_recall;
+    });
+    var tabs = document.getElementById("perClassTabs");
+    if (!withPerClass.length) {
+      document.getElementById("perClassChart").innerHTML = '<div class="empty-state"><p>暂无逐类指标数据</p></div>';
+    } else {
+      tabs.innerHTML = withPerClass.map(function (m) {
+        return '<button class="tab' + (m === cmModel ? " active" : "") + '" data-exp="' + m.exp_id + '">' + m.exp_id.toUpperCase() + ' · ' + TG.escape(m.name) + (m.pretrained ? "（迁移）" : "（从零）") + '</button>';
+      }).join("");
+      drawPerClass(cmModel, classOrder);
+      tabs.querySelectorAll(".tab").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          tabs.querySelectorAll(".tab").forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+          var m = models.filter(function (x) { return x.exp_id === btn.getAttribute("data-exp"); })[0];
+          drawPerClass(m, classOrder);
+        });
+      });
+    }
+  }).catch(function (err) {
+    console.error(err);
+    TG.toast("实验数据加载失败", "error");
+  });
+
+  function drawCM(model, order) {
+    var el = document.getElementById("cmChart");
+    var cm = model.confusion_matrix;
+    if (!cm) {
+      el.innerHTML = '<div class="empty-state"><p>该模型缺少混淆矩阵数据</p></div>';
+      return;
+    }
+    document.getElementById("cmHint").textContent = model.exp_id.toUpperCase() + " · 测试集";
+    var labels = order.map(function (c) { return SHORT[c] || c; });
+    var data = [];
+    var max = 1;
+    cm.forEach(function (row, i) {
+      row.forEach(function (v, j) {
+        data.push([j, i, v]);
+        if (v > max) max = v;
+      });
+    });
+    var chart = TG.chart(el, {
+      legend: { show: false },
+      grid: { left: 8, right: 16, top: 10, bottom: 42, containLabel: true },
+      tooltip: { formatter: function (p) { return labels[p.value[1]] + " → " + labels[p.value[0]] + "：" + p.value[2]; } },
+      xAxis: { type: "category", data: labels, name: "预测", nameLocation: "middle", nameGap: 30, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { fontSize: 11 } },
+      yAxis: { type: "category", data: labels, name: "真实", inverse: true, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { fontSize: 11 } },
+      visualMap: { show: false, min: 0, max: max, inRange: { color: ["#f3f8f5", "#237a57"] } },
+      series: [{
+        type: "heatmap",
+        data: data,
+        label: { show: true, fontSize: 11, formatter: function (p) { return p.value[2] ? p.value[2] : "·"; } },
+        itemStyle: { borderColor: "#fff", borderWidth: 2, borderRadius: 3 },
+        emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,.18)" } }
+      }]
+    });
+    charts.push(chart);
+  }
+
+  function drawPerClass(model, order) {
+    var el = document.getElementById("perClassChart");
+    if (!model || !model.per_class_precision) return;
+    var labels = order.map(function (c) { return SHORT[c] || c; });
+    var precision = order.map(function (c) { return model.per_class_precision[c]; });
+    var recall = order.map(function (c) { return model.per_class_recall[c]; });
+    if (el.__chart) { el.__chart.dispose(); el.innerHTML = ""; }
+    var chart = TG.chart(el, {
+      legend: { data: ["精确率", "召回率"], top: 0 },
+      grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", valueFormatter: function (v) { return (v * 100).toFixed(2) + "%"; } },
+      xAxis: { type: "category", data: labels, axisTick: { show: false }, axisLine: { lineStyle: { color: "#d7ded9" } } },
+      yAxis: { type: "value", min: 0.9, max: 1, axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + "%"; } }, splitLine: { lineStyle: { color: "#eef1ef" } } },
+      series: [
+        { name: "精确率", type: "bar", barMaxWidth: 18, data: precision, itemStyle: { borderRadius: [4, 4, 0, 0] } },
+        { name: "召回率", type: "bar", barMaxWidth: 18, data: recall, itemStyle: { color: "#67a879", borderRadius: [4, 4, 0, 0] } }
+      ]
+    });
+    el.__chart = chart;
+    charts.push(chart);
+  }
+})();
+</script>
+</body>
+</html>
